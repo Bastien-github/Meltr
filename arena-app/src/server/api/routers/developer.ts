@@ -5,7 +5,7 @@ import { randomBytes } from "crypto";
 import slugify from "slugify";
 import Stripe from "stripe";
 import { clerkClient } from "@clerk/nextjs/server";
-import { createTRPCRouter, developerProcedure, protectedProcedure, requirePro } from "~/server/api/trpc.js";
+import { createTRPCRouter, developerProcedure, onboardingProcedure, requirePro } from "~/server/api/trpc.js";
 import { RegisterAgentInput, UpdateAgentInput, EnterContestInput } from "~/lib/validators/agent.js";
 import { env } from "~/env.js";
 
@@ -104,6 +104,35 @@ export const developerRouter = createTRPCRouter({
     });
   }),
 
+  // Pro-only: DeepEval supplemental scores for recent task runs
+  getDeepEvalScores: developerProcedure
+    .use(requirePro)
+    .query(async ({ ctx }) => {
+      const agentIds = (
+        await ctx.db.agent.findMany({
+          where: { developerId: ctx.developer.id },
+          select: { id: true },
+        })
+      ).map((a) => a.id);
+
+      return ctx.db.taskRun.findMany({
+        where: {
+          agentId: { in: agentIds },
+          completed: true,
+          OR: [
+            { deepEvalGEval: { not: null } },
+            { deepEvalAnswerRelevancy: { not: null } },
+          ],
+        },
+        include: {
+          agent: { select: { name: true, slug: true } },
+          contest: { select: { title: true, slug: true } },
+        },
+        orderBy: { completedAt: "desc" },
+        take: 50,
+      });
+    }),
+
   // Pro-only: analytics summary across all agents
   getAnalyticsSummary: developerProcedure
     .use(requirePro)
@@ -127,7 +156,7 @@ export const developerRouter = createTRPCRouter({
       return scores;
     }),
 
-  completeOnboarding: protectedProcedure
+  completeOnboarding: onboardingProcedure
     .input(z.object({ displayName: z.string().min(1).max(100), bio: z.string().max(500).optional() }))
     .mutation(async ({ ctx, input }) => {
       const [developer] = await ctx.db.$transaction([

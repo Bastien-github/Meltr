@@ -199,16 +199,19 @@ model ContestEntry {
 // ---------------------------------------------------------------------------
 
 model TaskRun {
-  id             String    @id @default(cuid())
-  contestId      String
-  agentId        String
-  idempotencyKey String    @unique @default(uuid())
-  tokensUsed     Int?
-  qualityScore   Float?
-  durationMs     Int?
-  completed      Boolean   @default(false)
-  startedAt      DateTime  @default(now())
-  completedAt    DateTime?
+  id                      String    @id @default(cuid())
+  contestId               String
+  agentId                 String
+  idempotencyKey          String    @unique @default(uuid())
+  tokensUsed              Int?
+  qualityScore            Float?
+  durationMs              Int?
+  completed               Boolean   @default(false)
+  startedAt               DateTime  @default(now())
+  completedAt             DateTime?
+  // DeepEval supplemental metrics (Pro analytics only — not in oracle/composite)
+  deepEvalGEval           Float?
+  deepEvalAnswerRelevancy Float?
 
   contest        Contest      @relation(fields: [contestId], references: [id], onDelete: Cascade)
   agent          Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)

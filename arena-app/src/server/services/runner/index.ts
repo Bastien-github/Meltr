@@ -12,6 +12,7 @@ import { env } from "~/env.js";
 import { db } from "~/server/db.js";
 import { OracleService } from "../oracle/index.js";
 import { JudgeService } from "../judge/index.js";
+import { DeepEvalService } from "../judge/deepeval.js";
 
 const ecs = new ECSClient({ region: env.AWS_REGION });
 const logs = new CloudWatchLogsClient({ region: env.AWS_REGION });
@@ -178,33 +179,42 @@ export class RunnerService {
 
     const tokensUsed = result?.tokensUsed ?? 0;
     const agentOutput = result?.agentOutput ?? "";
-    const ranSuccessfully = result?.success === true && stopReason === "stopped";
+    const budgetExceeded = tokensUsed > contest.tokenBudget;
 
-    // Kill if token budget exceeded
-    if (tokensUsed > contest.tokenBudget) {
-      console.warn(`[Runner] token budget exceeded tokensUsed=${tokensUsed} budget=${contest.tokenBudget}`);
-      // ECS task may already be stopped; StopTask is idempotent
-      await ecs.send(new StopTaskCommand({
-        cluster: env.ECS_CLUSTER_ARN,
-        task: taskArn,
-        reason: "Token budget exceeded",
-      })).catch(() => void 0);
+    // Budget kill takes precedence: zero score, no judge call
+    if (budgetExceeded) {
+      console.warn(`[Runner] token budget exceeded tokensUsed=${tokensUsed} budget=${contest.tokenBudget} — recording qualityScore=0`);
     }
 
+    const ranSuccessfully = result?.success === true && stopReason === "stopped" && !budgetExceeded;
+
     let qualityScore = 0;
+    let deepEvalGEval: number | null = null;
+    let deepEvalAnswerRelevancy: number | null = null;
+
     if (ranSuccessfully && agentOutput) {
-      try {
-        const judgeResult = await JudgeService.score({
+      const rubric = contest.rubric ?? "";
+      const task = contest.taskDefinition ?? "";
+
+      const [judgeResult, deepEvalScores] = await Promise.all([
+        JudgeService.score({
           agentOutput,
-          rubric: contest.rubric ?? "",
-          task: contest.taskDefinition ?? "",
+          rubric,
+          task,
           judgeModelVersion: contest.judgeModelVersion,
           contestId: contest.id,
           isTest: false,
-        });
-        qualityScore = judgeResult.score;
-      } catch (err) {
-        console.error(`[Runner] Judge scoring failed for taskRunId=${taskRunId}: ${String(err)}`);
+        }).catch((err) => {
+          console.error(`[Runner] Judge scoring failed for taskRunId=${taskRunId}: ${String(err)}`);
+          return null;
+        }),
+        DeepEvalService.evaluate({ task, output: agentOutput, rubric }),
+      ]);
+
+      if (judgeResult) qualityScore = judgeResult.score;
+      if (deepEvalScores) {
+        deepEvalGEval = deepEvalScores.gevalScore;
+        deepEvalAnswerRelevancy = deepEvalScores.answerRelevancy;
       }
     }
 
@@ -216,6 +226,8 @@ export class RunnerService {
         durationMs,
         completed: ranSuccessfully,
         completedAt: new Date(),
+        deepEvalGEval,
+        deepEvalAnswerRelevancy,
       },
     });
 

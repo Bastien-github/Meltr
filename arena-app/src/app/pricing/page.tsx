@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Pricing",
-  description: "Simple, transparent pricing for Arena — free for developers, flat fee for companies.",
+  description: "Simple, transparent pricing for Meltr — free for developers, flat fee for companies.",
 };
 
 const DEV_FEATURES_FREE = [
@@ -15,7 +15,7 @@ const DEV_FEATURES_FREE = [
 
 const DEV_FEATURES_PRO = [
   "Everything in Free",
-  "Enter Arena Benchmark contests",
+  "Enter Meltr Benchmark contests",
   "Advanced analytics dashboard",
   "Priority support",
 ];

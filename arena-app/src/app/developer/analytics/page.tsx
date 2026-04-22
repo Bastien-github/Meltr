@@ -6,21 +6,18 @@ import { ErrorBoundary } from "~/components/ui/ErrorBoundary";
 export const metadata: Metadata = { title: "Analytics" };
 
 async function AnalyticsDashboard() {
-  const summary = await api.developer.getAnalyticsSummary();
+  const [summary, deepEvalRows] = await Promise.all([
+    api.developer.getAnalyticsSummary(),
+    api.developer.getDeepEvalScores(),
+  ]);
 
   return (
-    <div className="flex flex-col gap-8">
-      {/* Score distribution */}
-      <div>
-        <h2 className="mb-4 font-display text-xl font-bold uppercase text-text-primary">Score Distribution</h2>
-        <div className="rounded-xl border border-border bg-surface-1 p-6">
-          <p className="text-sm text-text-muted">Score distribution chart coming soon.</p>
-        </div>
-      </div>
-
+    <div className="flex flex-col gap-10">
       {/* Per-contest breakdown */}
       <div>
-        <h2 className="mb-4 font-display text-xl font-bold uppercase text-text-primary">Per-Contest Breakdown</h2>
+        <h2 className="mb-4 font-display text-xl font-bold uppercase text-text-primary">
+          Per-Contest Breakdown
+        </h2>
         {summary.length === 0 ? (
           <p className="text-sm text-text-muted">No contest data yet. Enter some contests first.</p>
         ) : (
@@ -64,8 +61,87 @@ async function AnalyticsDashboard() {
           </div>
         )}
       </div>
+
+      {/* DeepEval insights */}
+      <div>
+        <div className="mb-4 flex items-baseline gap-3">
+          <h2 className="font-display text-xl font-bold uppercase text-text-primary">
+            DeepEval Insights
+          </h2>
+          <span className="label text-text-muted">Supplemental — not in composite score</span>
+        </div>
+
+        {deepEvalRows.length === 0 ? (
+          <div className="rounded-xl border border-border bg-surface-1 p-6">
+            <p className="text-sm text-text-muted">
+              No DeepEval data yet.{" "}
+              {process.env.DEEPEVAL_SERVICE_URL
+                ? "Scores will appear after your next contest run."
+                : "Start the DeepEval microservice and set DEEPEVAL_SERVICE_URL to enable."}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-border">
+            <table className="data-table">
+              <thead className="bg-surface-1">
+                <tr>
+                  <th>Agent</th>
+                  <th>Contest</th>
+                  <th>
+                    <span title="Rubric alignment via GEval (0–1)">G-Eval</span>
+                  </th>
+                  <th>
+                    <span title="Answer relevancy to task (0–1)">Relevancy</span>
+                  </th>
+                  <th>Run date</th>
+                </tr>
+              </thead>
+              <tbody className="bg-background">
+                {deepEvalRows.map((row) => (
+                  <tr key={row.id}>
+                    <td>
+                      <Link href={`/agents/${row.agent?.slug ?? ""}`} className="transition-colors hover:text-accent-dark">
+                        {row.agent?.name ?? row.agentId}
+                      </Link>
+                    </td>
+                    <td>
+                      <Link href={`/contests/${row.contest?.slug ?? ""}`} className="transition-colors hover:text-accent-dark">
+                        {row.contest?.title ?? row.contestId}
+                      </Link>
+                    </td>
+                    <td>
+                      <DeepEvalScore value={row.deepEvalGEval} />
+                    </td>
+                    <td>
+                      <DeepEvalScore value={row.deepEvalAnswerRelevancy} />
+                    </td>
+                    <td className="text-text-muted">
+                      {row.completedAt
+                        ? new Date(row.completedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                        : "N/A"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <p className="mt-3 text-xs text-text-muted">
+          G-Eval uses your contest rubric as evaluation criteria. Answer Relevancy measures how
+          directly the output addresses the task. Both use Claude as the judge.
+        </p>
+      </div>
     </div>
   );
+}
+
+function DeepEvalScore({ value }: { value: number | null }) {
+  if (value === null) return <span className="text-text-muted">N/A</span>;
+  const pct = Math.round(value * 100);
+  const color =
+    pct >= 80 ? "text-green-600" : pct >= 50 ? "text-yellow-600" : "text-red-500";
+  return <span className={`data-value font-mono ${color}`}>{pct}%</span>;
 }
 
 export default function AnalyticsPage() {
@@ -79,7 +155,7 @@ export default function AnalyticsPage() {
           </h1>
         </div>
         <Link href="/pricing" className="text-sm text-text-muted underline-offset-2 hover:underline">
-          🔒 Pro plan
+          Pro plan
         </Link>
       </div>
 

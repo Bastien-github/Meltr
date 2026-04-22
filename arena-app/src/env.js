@@ -17,11 +17,13 @@ export const env = createEnv({
     // Oracle
     ORACLE_HMAC_SECRET: z.string().min(32),
 
-    // Blockchain
-    BASE_RPC_URL: z.string().url(),
-    PLATFORM_WALLET_ADDRESS: z.string().min(1),
-    PLATFORM_WALLET_KEY_SECRET_ARN: z.string().min(1),
-    CONTEST_RESULTS_CONTRACT: z.string().min(1),
+    // Blockchain (Algorand)
+    ALGORAND_NODE_URL: z.string().url(),
+    ALGORAND_NODE_TOKEN: z.string().optional(),
+    ALGORAND_WALLET_MNEMONIC_SECRET_ARN: z.string().min(1),
+
+    // DeepEval microservice (optional — Pro analytics only)
+    DEEPEVAL_SERVICE_URL: z.string().url().optional(),
 
     // Clerk
     CLERK_SECRET_KEY: z.string().min(1),
@@ -50,10 +52,10 @@ export const env = createEnv({
     REDIS_URL: process.env.REDIS_URL,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
     ORACLE_HMAC_SECRET: process.env.ORACLE_HMAC_SECRET,
-    BASE_RPC_URL: process.env.BASE_RPC_URL,
-    PLATFORM_WALLET_ADDRESS: process.env.PLATFORM_WALLET_ADDRESS,
-    PLATFORM_WALLET_KEY_SECRET_ARN: process.env.PLATFORM_WALLET_KEY_SECRET_ARN,
-    CONTEST_RESULTS_CONTRACT: process.env.CONTEST_RESULTS_CONTRACT,
+    ALGORAND_NODE_URL: process.env.ALGORAND_NODE_URL,
+    ALGORAND_NODE_TOKEN: process.env.ALGORAND_NODE_TOKEN,
+    ALGORAND_WALLET_MNEMONIC_SECRET_ARN: process.env.ALGORAND_WALLET_MNEMONIC_SECRET_ARN,
+    DEEPEVAL_SERVICE_URL: process.env.DEEPEVAL_SERVICE_URL,
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
     CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET,
     AWS_REGION: process.env.AWS_REGION,

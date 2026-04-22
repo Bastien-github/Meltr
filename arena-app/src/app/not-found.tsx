@@ -14,7 +14,7 @@ export default function NotFoundPage() {
         This page doesn&apos;t exist. It may have been moved or deleted.
       </p>
       <Link href="/" className="btn-primary mt-2">
-        Back to Arena
+        Back to Meltr
       </Link>
     </div>
   );

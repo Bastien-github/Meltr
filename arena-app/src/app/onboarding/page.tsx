@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import { toast } from "sonner";
 import { api } from "~/trpc/react";
 
 export default function OnboardingPage() {
@@ -11,14 +12,13 @@ export default function OnboardingPage() {
   const [role, setRole] = useState<"DEVELOPER" | "COMPANY" | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [companyName, setCompanyName] = useState("");
-  const [error, setError] = useState("");
 
   const completeDev = api.developer.completeOnboarding.useMutation({
     onSuccess: async () => {
       await user?.reload();
       router.push("/developer/agents");
     },
-    onError: (e) => setError(e.message),
+    onError: (e) => toast.error(e.message),
   });
 
   const completeCompany = api.company.completeOnboarding.useMutation({
@@ -26,16 +26,16 @@ export default function OnboardingPage() {
       await user?.reload();
       router.push("/company/my-contests");
     },
-    onError: (e) => setError(e.message),
+    onError: (e) => toast.error(e.message),
   });
 
   function handleSubmit() {
-    if (!role) { setError("Please select a role"); return; }
+    if (!role) { toast.error("Please select a role"); return; }
     if (role === "DEVELOPER") {
-      if (!displayName.trim()) { setError("Display name is required"); return; }
+      if (!displayName.trim()) { toast.error("Display name is required"); return; }
       completeDev.mutate({ displayName });
     } else {
-      if (!companyName.trim()) { setError("Company name is required"); return; }
+      if (!companyName.trim()) { toast.error("Company name is required"); return; }
       completeCompany.mutate({ name: companyName });
     }
   }
@@ -44,14 +44,14 @@ export default function OnboardingPage() {
     <div className="flex min-h-[calc(100vh-3rem)] flex-col items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <p className="label text-accent" style={{ letterSpacing: "0.22em" }}>Welcome to Arena</p>
+          <p className="label text-accent" style={{ letterSpacing: "0.22em" }}>Welcome to Meltr</p>
           <h1
             className="mt-3 font-display text-4xl font-black uppercase text-text-primary"
             style={{ letterSpacing: "-0.02em" }}
           >
             Get started
           </h1>
-          <p className="mt-2 text-sm text-text-muted">Tell us how you&apos;ll use Arena.</p>
+          <p className="mt-2 text-sm text-text-muted">Tell us how you&apos;ll use Meltr.</p>
         </div>
 
         {/* Role selector */}
@@ -87,7 +87,7 @@ export default function OnboardingPage() {
             <label className="label mb-1.5 block">Display name</label>
             <input
               className="field"
-              placeholder="Your public name on Arena"
+              placeholder="Your public name on Meltr"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
             />
@@ -105,8 +105,6 @@ export default function OnboardingPage() {
             />
           </div>
         )}
-
-        {error && <p className="mt-3 text-sm text-danger">{error}</p>}
 
         <button
           className="btn-primary mt-6 w-full justify-center"

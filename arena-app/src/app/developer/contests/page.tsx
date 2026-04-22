@@ -39,7 +39,7 @@ async function ContestList() {
             <div className="flex items-center gap-2">
               <StatusBadge status={contest.status as ContestStatus} />
               {contest.company?.isSystem && (
-                <span className="badge bg-accent/10 text-accent-dark">Arena Benchmark</span>
+                <span className="badge bg-accent/10 text-accent-dark">Meltr Benchmark</span>
               )}
             </div>
             <p className="font-semibold text-text-primary transition-colors group-hover:text-accent-dark">

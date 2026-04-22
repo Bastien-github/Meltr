@@ -2,7 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
 export const metadata = {
-  title: "Queue Monitor — Arena Admin",
+  title: "Queue Monitor — Meltr Admin",
   robots: { index: false },
 };
 

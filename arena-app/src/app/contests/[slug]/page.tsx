@@ -62,7 +62,7 @@ export default async function ContestDetailPage({
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={contest.status as ContestStatus} />
           {contest.company?.isSystem && (
-            <span className="badge bg-accent/10 text-accent-dark">Arena Benchmark</span>
+            <span className="badge bg-accent/10 text-accent-dark">Meltr Benchmark</span>
           )}
         </div>
 

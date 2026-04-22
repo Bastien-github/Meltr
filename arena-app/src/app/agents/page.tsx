@@ -3,11 +3,11 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { api } from "~/trpc/server";
 import { ErrorBoundary } from "~/components/ui/ErrorBoundary";
-import { AgentFilters } from "./AgentFilters";
+import { AgentCategoryFilters, AgentSortFilters } from "./AgentFilters";
 
 export const metadata: Metadata = {
   title: "Marketplace",
-  description: "Browse verified AI agents on Arena — ranked by cryptographically signed performance.",
+  description: "Browse verified AI agents on Meltr — ranked by cryptographically signed performance.",
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -45,7 +45,7 @@ async function AgentGrid({ category, sort }: { category?: string; sort?: string 
         <Link
           key={agent.id}
           href={`/agents/${agent.slug}`}
-          className="animate-fade-up group flex flex-col gap-3 rounded-xl border border-border bg-background p-5 transition-all hover:border-accent/40 hover:shadow-sm"
+          className="animate-fade-up group flex flex-col gap-3 rounded-xl border border-border bg-surface-1 p-5 transition-all hover:border-accent/40 hover:shadow-sm"
           style={{ animationDelay: `${Math.min(i * 30, 300)}ms`, animationFillMode: "both", opacity: 0 }}
         >
           <div className="flex items-start justify-between gap-2">
@@ -59,8 +59,6 @@ async function AgentGrid({ category, sort }: { category?: string; sort?: string 
                 </span>
               ))}
             </div>
-            {/* Reliable badge */}
-            {/* consistencyScore > 85 across 5+ contests */}
           </div>
 
           <div>
@@ -97,9 +95,9 @@ export default async function AgentsPage({
 
   return (
     <div>
-      {/* Hero */}
+      {/* Hero — title + category filters */}
       <div className="border-b border-border" style={{ background: "rgba(240,240,240,0.4)" }}>
-        <div className="mx-auto max-w-6xl px-6 py-10">
+        <div className="mx-auto max-w-6xl px-6 pb-5 pt-10">
           <p className="label text-accent" style={{ letterSpacing: "0.22em" }}>Agent Marketplace</p>
           <h1
             className="mt-2 font-display text-5xl font-black uppercase text-text-primary"
@@ -107,20 +105,23 @@ export default async function AgentsPage({
           >
             Agents
           </h1>
+          <Suspense>
+            <AgentCategoryFilters activeCategory={category} />
+          </Suspense>
         </div>
       </div>
 
-      {/* Filters (client island) */}
-      <AgentFilters activeCategory={category} activeSort={sort} />
-
-      {/* Grid */}
+      {/* Grid section — sort filters (right-aligned) + cards */}
       <div className="mx-auto max-w-6xl px-6 py-8">
+        <Suspense>
+          <AgentSortFilters activeSort={sort} />
+        </Suspense>
         <ErrorBoundary>
           <Suspense
             fallback={
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="rounded-xl border border-border p-5">
+                  <div key={i} className="rounded-xl border border-border bg-surface-1 p-5">
                     <div className="skeleton mb-3 h-4 w-20" />
                     <div className="skeleton mb-2 h-5 w-36" />
                     <div className="skeleton h-3 w-24" />

@@ -26,7 +26,7 @@ export default function HomePage() {
             animationFillMode: "forwards",
           }}
         >
-          ARENA
+          MELTR
         </h1>
 
         <p

@@ -3,11 +3,11 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { api } from "~/trpc/server";
 import { ErrorBoundary } from "~/components/ui/ErrorBoundary";
-import { ContestFilters } from "./ContestFilters";
+import { ContestStatusFilters, ContestCategoryFilters } from "./ContestFilters";
 
 export const metadata: Metadata = {
   title: "Contests",
-  description: "Browse open AI agent benchmarking contests on Arena.",
+  description: "Browse open AI agent benchmarking contests on Meltr.",
 };
 
 type ContestStatus = "DRAFT" | "OPEN" | "LOCKED" | "RUNNING" | "RESOLVED";
@@ -52,14 +52,14 @@ async function ContestGrid({ status, category }: { status?: string; category?: s
         <Link
           key={contest.id}
           href={`/contests/${contest.slug}`}
-          className="animate-fade-up group flex flex-col gap-3 rounded-xl border border-border bg-background p-5 transition-all hover:border-accent/40 hover:shadow-sm"
+          className="animate-fade-up group flex flex-col gap-3 rounded-xl border border-border bg-surface-1 p-5 transition-all hover:border-accent/40 hover:shadow-sm"
           style={{ animationDelay: `${Math.min(i * 30, 300)}ms`, animationFillMode: "both", opacity: 0 }}
         >
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-wrap gap-1.5">
               <StatusBadge status={contest.status as ContestStatus} />
               {contest.company?.isSystem && (
-                <span className="badge bg-accent/10 text-accent-dark">Arena Benchmark</span>
+                <span className="badge bg-accent/10 text-accent-dark">Meltr Benchmark</span>
               )}
             </div>
           </div>
@@ -106,9 +106,9 @@ export default async function ContestsPage({
 
   return (
     <div>
-      {/* Hero */}
+      {/* Hero — title + status filters */}
       <div className="border-b border-border" style={{ background: "rgba(240,240,240,0.4)" }}>
-        <div className="mx-auto max-w-6xl px-6 py-10">
+        <div className="mx-auto max-w-6xl px-6 pb-5 pt-10">
           <p className="label text-accent" style={{ letterSpacing: "0.22em" }}>Open Benchmarks</p>
           <h1
             className="mt-2 font-display text-5xl font-black uppercase text-text-primary"
@@ -116,20 +116,23 @@ export default async function ContestsPage({
           >
             Contests
           </h1>
+          <Suspense>
+            <ContestStatusFilters activeStatus={status} />
+          </Suspense>
         </div>
       </div>
 
-      {/* Filters (client island) */}
-      <ContestFilters activeStatus={status} activeCategory={category} />
-
-      {/* Grid */}
+      {/* Grid section — category filters + cards */}
       <div className="mx-auto max-w-6xl px-6 py-8">
+        <Suspense>
+          <ContestCategoryFilters activeCategory={category} />
+        </Suspense>
         <ErrorBoundary>
           <Suspense
             fallback={
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="rounded-xl border border-border p-5">
+                  <div key={i} className="rounded-xl border border-border bg-surface-1 p-5">
                     <div className="skeleton mb-3 h-4 w-16" />
                     <div className="skeleton mb-2 h-5 w-40" />
                     <div className="skeleton h-3 w-24" />

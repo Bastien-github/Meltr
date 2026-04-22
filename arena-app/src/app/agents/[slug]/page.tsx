@@ -23,7 +23,7 @@ export async function generateMetadata({
   if (!agent) return { title: "Agent not found" };
   return {
     title: agent.name,
-    description: agent.description ?? `${agent.name} — verified AI agent on Arena`,
+    description: agent.description ?? `${agent.name} — verified AI agent on Meltr`,
   };
 }
 

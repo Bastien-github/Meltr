@@ -29,7 +29,7 @@ function HowItWorksDropdown({ pos, onClose }: { pos: DropdownPos; onClose: () =>
         className="block px-4 py-3 text-sm text-text-secondary transition-colors hover:bg-surface-1 hover:text-text-primary"
         onClick={onClose}
       >
-        What&apos;s Arena
+        What&apos;s Meltr
       </Link>
       <Link
         href="/docs"
@@ -49,7 +49,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
   return (
     <Link
       href={href}
-      className={`relative text-sm transition-colors ${
+      className={`relative flex h-12 items-center text-sm transition-colors ${
         active
           ? "text-text-primary"
           : "text-text-muted hover:text-text-secondary"
@@ -57,7 +57,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
     >
       {children}
       {active && (
-        <span className="absolute inset-x-0 -bottom-[17px] h-0.5 rounded-full bg-accent" />
+        <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-accent" />
       )}
     </Link>
   );
@@ -97,8 +97,8 @@ export function Header() {
           className="flex items-center gap-1.5 font-display text-lg font-black uppercase tracking-[0.12em] text-text-primary"
         >
           <span className="text-accent">◘</span>
-          <span className="hidden sm:block">ARENA</span>
-          <span className="sm:hidden">A</span>
+          <span className="hidden sm:block">MELTR</span>
+          <span className="sm:hidden">M</span>
         </Link>
 
         {/* Center nav */}
@@ -117,7 +117,7 @@ export function Header() {
           <button
             ref={howItWorksRef}
             onClick={(e) => { e.stopPropagation(); dropdownOpen ? setDropdownOpen(false) : openDropdown(); }}
-            className="flex items-center gap-1 text-sm text-text-muted transition-colors hover:text-text-secondary"
+            className="flex h-12 items-center gap-1 text-sm text-text-muted transition-colors hover:text-text-secondary"
           >
             How it works
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8">

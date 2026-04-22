@@ -159,11 +159,13 @@ async function main() {
       die("Anthropic returned no text content");
     }
     agentOutput = content.text;
-  }
 
-  if (tokensUsed > tokenBudget) {
-    console.warn(`[Runner] token budget exceeded: used=${tokensUsed} budget=${tokenBudget}`);
-    // RunnerService will have already killed via StopTask; this path handles graceful self-detection
+    // Enforce budget kill in direct mode: write failure so RunnerService records qualityScore=0
+    if (tokensUsed > tokenBudget) {
+      writeResult({ success: false, error: "Token budget exceeded", tokensUsed, agentOutput: "" });
+      console.error(`[Runner] token budget exceeded: used=${tokensUsed} budget=${tokenBudget} — recording failure`);
+      process.exit(1);
+    }
   }
 
   writeResult({ success: true, agentOutput, tokensUsed });

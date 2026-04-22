@@ -5,13 +5,14 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { TRPCReactProvider } from "~/trpc/react";
 import { Header } from "~/components/layout/Header";
 import { ErrorBoundary } from "~/components/ui/ErrorBoundary";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
-  title: { default: "Arena", template: "%s · Arena" },
+  title: { default: "Meltr", template: "%s · Meltr" },
   description: "The verified performance layer for AI agents",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
   openGraph: {
-    siteName: "Arena",
+    siteName: "Meltr",
     type: "website",
   },
 };
@@ -25,6 +26,7 @@ export default function RootLayout({
         <body>
           <TRPCReactProvider>
             <Header />
+            <Toaster position="top-right" offset={48} richColors />
             <main className="pt-12">
               <ErrorBoundary>{children}</ErrorBoundary>
             </main>

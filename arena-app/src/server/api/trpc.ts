@@ -1,5 +1,5 @@
 import { initTRPC, TRPCError } from "@trpc/server";
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 import { compare } from "bcryptjs";
@@ -124,12 +124,34 @@ const enforceApiKey = t.middleware(async ({ ctx, next }) => {
   return next({ ctx: { ...ctx, agent: matchedAgent } });
 });
 
+// For completeOnboarding: Clerk webhook may not have synced the DB user yet.
+// This middleware creates the user row on the fly if it doesn't exist.
+const enforceOnboarding = t.middleware(async ({ ctx, next }) => {
+  if (!ctx.clerkUserId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+  let user = await db.user.findFirst({ where: { clerkId: ctx.clerkUserId } });
+  if (!user) {
+    const clerk = await clerkClient();
+    const clerkUser = await clerk.users.getUser(ctx.clerkUserId);
+    const email = clerkUser.emailAddresses[0]?.emailAddress;
+    if (!email) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "No email on Clerk account" });
+    user = await db.user.upsert({
+      where: { clerkId: ctx.clerkUserId },
+      create: { clerkId: ctx.clerkUserId, email },
+      update: {},
+    });
+  }
+
+  return next({ ctx: { ...ctx, user } });
+});
+
 // ---------------------------------------------------------------------------
 // Procedures
 // ---------------------------------------------------------------------------
 
 export const publicProcedure = t.procedure.use(timingMiddleware);
 export const protectedProcedure = t.procedure.use(timingMiddleware).use(enforceAuth);
+export const onboardingProcedure = t.procedure.use(timingMiddleware).use(enforceOnboarding);
 export const companyProcedure = t.procedure.use(timingMiddleware).use(enforceCompany);
 export const developerProcedure = t.procedure.use(timingMiddleware).use(enforceDeveloper);
 export const agentApiProcedure = t.procedure.use(timingMiddleware).use(enforceApiKey);

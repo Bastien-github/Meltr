@@ -2,7 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import Stripe from "stripe";
 import { clerkClient } from "@clerk/nextjs/server";
-import { createTRPCRouter, companyProcedure, protectedProcedure } from "~/server/api/trpc.js";
+import { createTRPCRouter, companyProcedure, onboardingProcedure } from "~/server/api/trpc.js";
 import { CreateContestInput, UpdateContestInput, TestRubricInput } from "~/lib/validators/contest.js";
 import { AuditReportService } from "~/server/services/audit/report-generator.js";
 import { ContestStateMachine } from "~/server/services/contest/state-machine.js";
@@ -15,7 +15,7 @@ const stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: "2026-03-25.dahli
 const TEST_RUBRIC_LIMIT = 5;
 
 export const companyRouter = createTRPCRouter({
-  completeOnboarding: protectedProcedure
+  completeOnboarding: onboardingProcedure
     .input(z.object({ name: z.string().min(1).max(200) }))
     .mutation(async ({ ctx, input }) => {
       const [company] = await ctx.db.$transaction([
