@@ -1,0 +1,162 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useUser, UserButton, SignInButton, SignUpButton } from "@clerk/nextjs";
+
+interface DropdownPos {
+  top: number;
+  left: number;
+}
+
+function HowItWorksDropdown({ pos, onClose }: { pos: DropdownPos; onClose: () => void }) {
+  useEffect(() => {
+    const handleScroll = () => onClose();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="fixed z-[9999] w-48 overflow-hidden rounded-xl border border-border bg-background shadow-xl"
+      style={{ top: pos.top, left: pos.left }}
+      onMouseLeave={onClose}
+    >
+      <Link
+        href="/how-it-works"
+        className="block px-4 py-3 text-sm text-text-secondary transition-colors hover:bg-surface-1 hover:text-text-primary"
+        onClick={onClose}
+      >
+        What&apos;s Arena
+      </Link>
+      <Link
+        href="/docs"
+        className="block px-4 py-3 text-sm text-text-secondary transition-colors hover:bg-surface-1 hover:text-text-primary"
+        onClick={onClose}
+      >
+        Documentation
+      </Link>
+    </div>,
+    document.body,
+  );
+}
+
+function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+  const pathname = usePathname();
+  const active = pathname === href || pathname.startsWith(href + "/");
+  return (
+    <Link
+      href={href}
+      className={`relative text-sm transition-colors ${
+        active
+          ? "text-text-primary"
+          : "text-text-muted hover:text-text-secondary"
+      }`}
+    >
+      {children}
+      {active && (
+        <span className="absolute inset-x-0 -bottom-[17px] h-0.5 rounded-full bg-accent" />
+      )}
+    </Link>
+  );
+}
+
+export function Header() {
+  const { isSignedIn, user } = useUser();
+  const role = (user?.publicMetadata?.role as string | undefined) ?? "DEVELOPER";
+
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState<DropdownPos>({ top: 0, left: 0 });
+  const howItWorksRef = useRef<HTMLButtonElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  function openDropdown() {
+    const rect = howItWorksRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setDropdownPos({ top: rect.bottom + 8, left: rect.left });
+    setDropdownOpen(true);
+  }
+
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    const handleClick = () => setDropdownOpen(false);
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, [dropdownOpen]);
+
+  return (
+    <header className="fixed inset-x-0 top-0 z-50 h-12 border-b border-border bg-background/95 backdrop-blur-md">
+      <div className="relative mx-auto flex h-full max-w-screen-2xl items-center justify-between px-6">
+        {/* Logo */}
+        <Link
+          href="/"
+          className="flex items-center gap-1.5 font-display text-lg font-black uppercase tracking-[0.12em] text-text-primary"
+        >
+          <span className="text-accent">◘</span>
+          <span className="hidden sm:block">ARENA</span>
+          <span className="sm:hidden">A</span>
+        </Link>
+
+        {/* Center nav */}
+        <nav className="hidden items-center gap-6 md:flex">
+          <NavLink href="/leaderboard">Leaderboard</NavLink>
+          <NavLink href="/agents">Marketplace</NavLink>
+          <NavLink href="/contests">Contests</NavLink>
+
+          {isSignedIn && role === "COMPANY" && (
+            <NavLink href="/company/my-contests">My Contests</NavLink>
+          )}
+          {isSignedIn && role === "DEVELOPER" && (
+            <NavLink href="/developer/agents">My Agents</NavLink>
+          )}
+
+          <button
+            ref={howItWorksRef}
+            onClick={(e) => { e.stopPropagation(); dropdownOpen ? setDropdownOpen(false) : openDropdown(); }}
+            className="flex items-center gap-1 text-sm text-text-muted transition-colors hover:text-text-secondary"
+          >
+            How it works
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M2.5 4.5l3.5 3.5 3.5-3.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </nav>
+
+        {/* Right */}
+        <div className="flex items-center gap-2">
+          {isSignedIn ? (
+            <UserButton appearance={{ elements: { avatarBox: "w-8 h-8" } }} />
+          ) : (
+            <>
+              <SignInButton mode="modal">
+                <button className="h-9 rounded-lg px-4 text-sm font-medium text-text-muted transition-colors hover:text-text-primary">
+                  Sign in
+                </button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <button className="h-9 rounded-lg bg-accent-dark px-5 text-sm font-bold text-white transition-colors hover:bg-accent-darker">
+                  Sign up
+                </button>
+              </SignUpButton>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom gradient accent line */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
+
+      {/* Portal dropdown */}
+      {mounted && dropdownOpen && (
+        <HowItWorksDropdown
+          pos={dropdownPos}
+          onClose={() => setDropdownOpen(false)}
+        />
+      )}
+    </header>
+  );
+}

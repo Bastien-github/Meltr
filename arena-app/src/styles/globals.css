@@ -1,0 +1,243 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&display=swap');
+
+/* ── Design tokens */
+@theme {
+  /* Fonts */
+  --font-display: "Barlow Condensed", sans-serif;
+  --font-sans: "DM Sans", sans-serif;
+  --font-mono: "DM Mono", monospace;
+
+  /* Colors — Snow White backgrounds */
+  --color-background: #FFFFFF;
+  --color-surface-1: #F0F0F0;
+  --color-surface-2: #E0E0E0;
+  --color-surface-3: #C8C8C8;
+
+  /* Colors — borders */
+  --color-border: #E0E0E0;
+  --color-border-subtle: #F0F0F0;
+
+  /* Colors — Charcoal Black text */
+  --color-text-primary: #333333;
+  --color-text-secondary: #666666;
+  --color-text-muted: #888888;
+
+  /* Colors — Arctic Teal accent */
+  --color-accent: #65A09B;
+  --color-accent-hover: #4D8880;
+  --color-accent-dark: #3A6E69;
+  --color-accent-darker: #2A5450;
+
+  /* Colors — status */
+  --color-success: #16a34a;
+  --color-danger: #dc2626;
+  --color-info: #2563eb;
+  --color-warning: #d97706;
+
+  /* Font sizes */
+  --text-2xs: 0.65rem;
+  --text-2xs--line-height: 1rem;
+
+  /* Letter spacing */
+  --tracking-widest: 0.2em;
+  --tracking-ultra-wide: 0.3em;
+
+  /* Animations */
+  --animate-fade-up: fadeUp 0.4s ease forwards;
+  --animate-fade-in: fadeIn 0.3s ease forwards;
+  --animate-shimmer: shimmer 2s linear infinite;
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+  }
+}
+
+/* ── Base */
+@layer base {
+  :root { color-scheme: light; }
+
+  * { border-color: #E0E0E0; box-sizing: border-box; }
+
+  html {
+    font-family: "DM Sans", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: #FFFFFF;
+    color: #333333;
+    font-family: "DM Sans", sans-serif;
+  }
+
+  .mono,
+  [class*="font-mono"],
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #F0F0F0; }
+  ::-webkit-scrollbar-thumb { background: #C8C8C8; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #888888; }
+
+  ::selection { background: rgba(101,160,155,0.20); color: #333333; }
+}
+
+/* ── Components */
+@layer components {
+  .label {
+    font-size: 0.65rem;
+    line-height: 1rem;
+    font-family: "DM Mono", monospace;
+    text-transform: uppercase;
+    color: #666666;
+    letter-spacing: 0.18em;
+  }
+
+  .data-value {
+    font-family: "DM Mono", monospace;
+    color: #333333;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat-card {
+    @apply rounded-lg border border-border bg-surface-1 p-4;
+  }
+
+  .field {
+    @apply w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted outline-none transition-colors;
+  }
+  .field:focus {
+    @apply border-accent;
+    box-shadow: 0 0 0 3px rgba(101,160,155,0.20);
+  }
+
+  .field-area {
+    @apply w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted outline-none transition-colors resize-none;
+  }
+  .field-area:focus {
+    @apply border-accent;
+    box-shadow: 0 0 0 3px rgba(101,160,155,0.20);
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center gap-2 rounded-lg bg-accent-dark px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-accent-darker active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-text-secondary transition-all hover:border-accent hover:text-text-primary active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 2px;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.65rem;
+    line-height: 1rem;
+    font-family: "DM Mono", monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+  .badge-draft {
+    display: inline-flex; align-items: center; gap: 0.25rem;
+    border-radius: 2px; padding: 0.125rem 0.5rem;
+    font-size: 0.65rem; line-height: 1rem; font-family: "DM Mono", monospace;
+    text-transform: uppercase; letter-spacing: 0.14em;
+    background: #E0E0E0; color: #888888;
+  }
+  .badge-open {
+    display: inline-flex; align-items: center; gap: 0.25rem;
+    border-radius: 2px; padding: 0.125rem 0.5rem;
+    font-size: 0.65rem; line-height: 1rem; font-family: "DM Mono", monospace;
+    text-transform: uppercase; letter-spacing: 0.14em;
+    background: rgba(22,163,74,0.1); color: #16a34a;
+  }
+  .badge-locked {
+    display: inline-flex; align-items: center; gap: 0.25rem;
+    border-radius: 2px; padding: 0.125rem 0.5rem;
+    font-size: 0.65rem; line-height: 1rem; font-family: "DM Mono", monospace;
+    text-transform: uppercase; letter-spacing: 0.14em;
+    background: rgba(217,119,6,0.1); color: #d97706;
+  }
+  .badge-running {
+    display: inline-flex; align-items: center; gap: 0.25rem;
+    border-radius: 2px; padding: 0.125rem 0.5rem;
+    font-size: 0.65rem; line-height: 1rem; font-family: "DM Mono", monospace;
+    text-transform: uppercase; letter-spacing: 0.14em;
+    background: rgba(37,99,235,0.1); color: #2563eb;
+  }
+  .badge-resolved {
+    display: inline-flex; align-items: center; gap: 0.25rem;
+    border-radius: 2px; padding: 0.125rem 0.5rem;
+    font-size: 0.65rem; line-height: 1rem; font-family: "DM Mono", monospace;
+    text-transform: uppercase; letter-spacing: 0.14em;
+    background: rgba(101,160,155,0.15); color: #3A6E69;
+  }
+
+  .score-bar      { @apply h-0.5 rounded-full bg-surface-2 overflow-hidden; }
+  .score-bar-fill { @apply h-full rounded-full bg-accent transition-all duration-700 ease-out; }
+
+  .divider     { @apply border-t border-border; }
+  .page-header { @apply border-b border-border px-6 py-4; background: rgba(240,240,240,0.6); backdrop-filter: blur(4px); }
+
+  .data-table { @apply w-full border-collapse text-sm; }
+  .data-table th {
+    @apply border-b border-border px-4 py-2 text-left;
+    font-size: 0.65rem; line-height: 1rem; font-family: "DM Mono", monospace;
+    text-transform: uppercase; color: #666666; letter-spacing: 0.18em;
+  }
+  .data-table td { @apply border-b border-border px-4 py-3 text-text-secondary; }
+  .data-table tbody tr { @apply transition-colors hover:bg-surface-1; }
+  .data-table tbody tr td:first-child { @apply text-text-primary; }
+
+  .rank-num   { font-family: "Barlow Condensed", sans-serif; @apply text-2xl font-bold leading-none text-text-muted; font-variant-numeric: tabular-nums; }
+  .rank-num-1 { @apply text-accent-dark; }
+  .rank-num-2 { @apply text-text-secondary; }
+  .rank-num-3 { @apply text-warning; }
+
+  .skeleton { @apply animate-pulse rounded bg-surface-2; }
+}
+
+/* ── Utilities */
+@layer utilities {
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(101,160,155,0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(101,160,155,0.08) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  .text-balance { text-wrap: balance; }
+
+  .glow-accent {
+    box-shadow: 0 0 20px rgba(101,160,155,0.18), 0 0 60px rgba(101,160,155,0.06);
+  }
+
+  .border-accent-glow {
+    border-color: rgba(101,160,155,0.5);
+    box-shadow: 0 0 0 1px rgba(101,160,155,0.15);
+  }
+
+  .stagger-1 { animation-delay: 0.05s; }
+  .stagger-2 { animation-delay: 0.10s; }
+  .stagger-3 { animation-delay: 0.15s; }
+  .stagger-4 { animation-delay: 0.20s; }
+  .stagger-5 { animation-delay: 0.25s; }
+  .stagger-6 { animation-delay: 0.30s; }
+
+  .opacity-0-init { opacity: 0; }
+}

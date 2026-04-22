@@ -1,0 +1,362 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  COMPANY
+  DEVELOPER
+  ADMIN
+}
+
+enum SubscriptionTier {
+  free
+  pro
+}
+
+enum ContestStatus {
+  DRAFT
+  OPEN
+  LOCKED
+  RUNNING
+  RESOLVED
+}
+
+enum TaskVisibility {
+  ON_OPEN
+  ON_LOCK
+  ON_RUN
+}
+
+enum AgentApiCallStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// ---------------------------------------------------------------------------
+// Users & Roles
+// ---------------------------------------------------------------------------
+
+model User {
+  id                 String    @id @default(cuid())
+  clerkId            String    @unique
+  email              String    @unique
+  role               Role      @default(DEVELOPER)
+  onboardingComplete Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  company            Company?
+  developer          Developer?
+
+  @@map("users")
+}
+
+model Company {
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  name             String
+  description      String?
+  stripeCustomerId String?
+  isSystem         Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contests         Contest[]
+  agentApiCalls    AgentApiCall[]
+
+  @@map("companies")
+}
+
+model Developer {
+  id                   String           @id @default(cuid())
+  userId               String           @unique
+  displayName          String
+  bio                  String?
+  credits              Int              @default(0)
+  subscriptionTier     SubscriptionTier @default(free)
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  user                 User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agents               Agent[]
+
+  @@map("developers")
+}
+
+// ---------------------------------------------------------------------------
+// Agents
+// ---------------------------------------------------------------------------
+
+model Agent {
+  id                    String         @id @default(cuid())
+  developerId           String
+  name                  String
+  slug                  String         @unique
+  description           String?
+  webhookUrl            String?
+  apiKey                String         // bcrypt hash — NEVER store plaintext
+  modelConfig           Json?          // { model, temperature, max_tokens }
+  isActive              Boolean        @default(true)
+  apiEnabled            Boolean        @default(false)
+  pricePerCallCents     Int?
+  marketConfidenceScore Float?
+  category              String[]
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  developer             Developer        @relation(fields: [developerId], references: [id], onDelete: Cascade)
+  contestEntries        ContestEntry[]
+  taskRuns              TaskRun[]
+  oracleResults         OracleResult[]
+  leaderboardScores     LeaderboardScore[]
+  agentApiCalls         AgentApiCall[]
+
+  @@index([developerId])
+  @@index([slug])
+  @@map("agents")
+}
+
+// ---------------------------------------------------------------------------
+// Contests
+// ---------------------------------------------------------------------------
+
+model Contest {
+  id                    String          @id @default(cuid())
+  companyId             String
+  title                 String
+  slug                  String          @unique
+  description           String?
+  taskDefinition        String?
+  tokenBudget           Int
+  deadline              DateTime?
+  scheduledStartAt      DateTime?
+  rubric                String?
+  judgeModelVersion     String          @default("claude-opus-4-5")
+  status                ContestStatus   @default(DRAFT)
+  prizePool             Json?           // { first, second, third, currency }
+  category              String[]
+  taskVisibility        TaskVisibility  @default(ON_OPEN)
+  stripePaymentIntentId String?
+  platformFeeUsd        Float?
+  maxConcurrency        Int             @default(5)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  resolvedAt            DateTime?
+
+  company               Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  entries               ContestEntry[]
+  taskRuns              TaskRun[]
+  oracleResults         OracleResult[]
+  leaderboardScores     LeaderboardScore[]
+  stateLogs             ContestStateLog[]
+  judgeLogs             JudgeLog[]
+
+  @@index([companyId])
+  @@index([status])
+  @@index([slug])
+  @@index([scheduledStartAt])
+  @@map("contests")
+}
+
+// ---------------------------------------------------------------------------
+// Contest Entries
+// ---------------------------------------------------------------------------
+
+model ContestEntry {
+  contestId         String
+  agentId           String
+  enteredAt         DateTime  @default(now())
+  healthCheckPassed Boolean?
+  healthCheckAt     DateTime?
+  healthCheckError  String?
+
+  contest           Contest   @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  agent             Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@id([contestId, agentId])
+  @@index([contestId])
+  @@index([agentId])
+  @@map("contest_entries")
+}
+
+// ---------------------------------------------------------------------------
+// Task Runs
+// ---------------------------------------------------------------------------
+
+model TaskRun {
+  id             String    @id @default(cuid())
+  contestId      String
+  agentId        String
+  idempotencyKey String    @unique @default(uuid())
+  tokensUsed     Int?
+  qualityScore   Float?
+  durationMs     Int?
+  completed      Boolean   @default(false)
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+
+  contest        Contest      @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  agent          Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  oracleResult   OracleResult?
+
+  @@index([contestId])
+  @@index([agentId])
+  @@index([contestId, qualityScore(sort: Desc)])
+  @@map("task_runs")
+}
+
+// ---------------------------------------------------------------------------
+// Oracle Results — append-only (DB trigger enforced in migration 20240101000001)
+// ---------------------------------------------------------------------------
+
+model OracleResult {
+  id             String    @id @default(cuid())
+  taskRunId      String    @unique
+  agentId        String
+  contestId      String
+  tokensUsed     Int
+  qualityScore   Float
+  durationMs     Int
+  hash           String    @unique
+  idempotencyKey String    @unique
+  onChainTxHash  String?
+  exportedToS3   Boolean   @default(false)
+  s3Url          String?
+  signedAt       DateTime  @default(now())
+
+  taskRun        TaskRun      @relation(fields: [taskRunId], references: [id])
+  agent          Agent        @relation(fields: [agentId], references: [id])
+  contest        Contest      @relation(fields: [contestId], references: [id])
+  agentApiCall   AgentApiCall?
+
+  @@index([contestId])
+  @@index([agentId])
+  @@map("oracle_results")
+}
+
+// ---------------------------------------------------------------------------
+// Leaderboard
+// ---------------------------------------------------------------------------
+
+model LeaderboardScore {
+  id               String    @id @default(cuid())
+  agentId          String
+  contestId        String
+  qualityScore     Float
+  efficiencyScore  Float
+  consistencyScore Float?
+  compositeScore   Float
+  compositeVersion Int
+  rank             Int
+  computedAt       DateTime  @default(now())
+
+  agent            Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  contest          Contest   @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, contestId, compositeVersion])
+  @@index([agentId])
+  @@index([contestId])
+  @@index([compositeScore(sort: Desc)])
+  @@map("leaderboard_scores")
+}
+
+// ---------------------------------------------------------------------------
+// Contest State Log
+// ---------------------------------------------------------------------------
+
+model ContestStateLog {
+  id          String         @id @default(cuid())
+  contestId   String
+  fromStatus  ContestStatus?
+  toStatus    ContestStatus
+  triggeredBy String
+  timestamp   DateTime       @default(now())
+  metadata    Json?
+
+  contest     Contest        @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@index([contestId])
+  @@map("contest_state_logs")
+}
+
+// ---------------------------------------------------------------------------
+// Benchmark Templates
+// ---------------------------------------------------------------------------
+
+model BenchmarkTemplate {
+  id              String    @id @default(cuid())
+  slug            String    @unique
+  title           String
+  taskDefinition  String
+  rubric          String
+  tokenBudget     Int
+  durationMinutes Int
+  category        String[]
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("benchmark_templates")
+}
+
+// ---------------------------------------------------------------------------
+// Agent API Calls (Marketplace Phase 3 — schema only, not yet implemented)
+// ---------------------------------------------------------------------------
+
+model AgentApiCall {
+  id                    String              @id @default(cuid())
+  agentId               String
+  companyId             String
+  status                AgentApiCallStatus  @default(PENDING)
+  stripePaymentIntentId String?
+  oracleResultId        String?             @unique
+  tokensUsed            Int?
+  qualityScore          Float?
+  error                 String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  agent                 Agent               @relation(fields: [agentId], references: [id])
+  company               Company             @relation(fields: [companyId], references: [id])
+  oracleResult          OracleResult?       @relation(fields: [oracleResultId], references: [id])
+
+  @@index([agentId])
+  @@index([companyId])
+  @@map("agent_api_calls")
+}
+
+// ---------------------------------------------------------------------------
+// Judge Logs
+// ---------------------------------------------------------------------------
+
+model JudgeLog {
+  id                String    @id @default(cuid())
+  contestId         String?
+  inputHash         String    // SHA256(agentOutput + rubric) — never log raw content
+  judgeModelVersion String
+  score             Float
+  rationale         String
+  isTest            Boolean   @default(false)
+  durationMs        Int?
+  createdAt         DateTime  @default(now())
+
+  contest           Contest?  @relation(fields: [contestId], references: [id])
+
+  @@index([contestId])
+  @@map("judge_logs")
+}

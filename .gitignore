@@ -38,6 +38,7 @@ yarn-error.log*
 .cache/
 .next/
 next-env.d.ts
+!arena-app/next-env.d.ts
 .nuxt/
 tmp/
 temp/
@@ -58,3 +59,8 @@ Thumbs.db
 
 # TYPESCRIPT
 *.tsbuildinfo
+
+# Claude / project notes
+CLAUDE.md
+MELTR_REBUILD_TASKS.md
+Claude code history for Meltr.rtf

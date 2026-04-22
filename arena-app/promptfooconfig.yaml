@@ -1,0 +1,23 @@
+# Arena — Judge Consistency Test Suite
+# Run: pnpm test:judge
+# CI: runs on every PR touching src/server/services/judge/
+# Goal: score variance < 5 points across 10 runs for same input
+
+description: Arena judge consistency tests
+
+providers:
+  - id: arena-judge
+    config:
+      type: custom
+
+prompts:
+  - file://src/server/services/judge/prompt.ts
+
+tests:
+  - description: Code generation rubric consistency
+    vars:
+      rubric: "Score correctness (0-50), code quality (0-30), efficiency (0-20)."
+      agentOutput: "function add(a, b) { return a + b; }"
+    assert:
+      - type: javascript
+        value: "Math.abs(output.score - 85) < 10"

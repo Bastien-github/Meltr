@@ -1,6 +1,7 @@
 packages:
   - cli
   - www
+  - arena-app
 
 onlyBuiltDependencies:
   - '@prisma/client'
