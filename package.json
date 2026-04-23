@@ -24,7 +24,7 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "packageManager": "pnpm@10.8.0",
+  "packageManager": "npm@10.0.0",
   "scripts": {
     "typecheck": "turbo typecheck",
     "build:cli": "turbo --filter=create-t3-app build",
@@ -32,6 +32,7 @@
     "build": "turbo build",
     "start:cli": "turbo --filter=create-t3-app start",
     "start:www": "turbo --filter=www start",
+    "dev": "cd arena-app && npm run dev",
     "dev:cli": "turbo --filter=create-t3-app dev",
     "dev:www": "turbo --filter=www dev",
     "clean": "turbo clean && rm -rf node_modules",
@@ -41,8 +42,8 @@
     "format:check": "turbo format:check && prettier --check '*.{cjs,json}' --ignore-unknown --no-error-on-unmatched-pattern",
     "check": "turbo lint typecheck format:check && manypkg check",
     "release": "changeset version",
-    "pub:beta": "cd cli && pnpm pub:beta",
-    "pub:release": "cd cli && pnpm pub:release"
+    "pub:beta": "cd cli && npm run pub:beta",
+    "pub:release": "cd cli && npm run pub:release"
   },
   "dependencies": {
     "@changesets/changelog-github": "^0.4.8",

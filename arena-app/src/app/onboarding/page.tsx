@@ -2,30 +2,22 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { api } from "~/trpc/react";
 
 export default function OnboardingPage() {
-  const { user } = useUser();
   const router = useRouter();
   const [role, setRole] = useState<"DEVELOPER" | "COMPANY" | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [companyName, setCompanyName] = useState("");
 
   const completeDev = api.developer.completeOnboarding.useMutation({
-    onSuccess: async () => {
-      await user?.reload();
-      router.push("/developer/agents");
-    },
+    onSuccess: () => router.push("/developer/agents"),
     onError: (e) => toast.error(e.message),
   });
 
   const completeCompany = api.company.completeOnboarding.useMutation({
-    onSuccess: async () => {
-      await user?.reload();
-      router.push("/company/my-contests");
-    },
+    onSuccess: () => router.push("/company/my-contests"),
     onError: (e) => toast.error(e.message),
   });
 

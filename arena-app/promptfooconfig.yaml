@@ -1,5 +1,5 @@
 # Arena — Judge Consistency Test Suite
-# Run: pnpm test:judge
+# Run: npm run test:judge
 # CI: runs on every PR touching src/server/services/judge/
 # Goal: score variance < 5 points across 10 runs for same input
 
