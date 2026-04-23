@@ -3,20 +3,14 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { api } from "~/trpc/server";
 import { ErrorBoundary } from "~/components/ui/ErrorBoundary";
-import { AgentCategoryFilters, AgentSortFilters } from "./AgentFilters";
+import { AgentCategoryFilters, AgentSortSelect } from "./AgentFilters";
+import { Breadcrumb } from "~/components/ui/Breadcrumb";
+import { ScoreBar, compositeColor } from "~/components/ui/ScoreBar";
+import { GridBg } from "~/components/ui/GridBg";
 
 export const metadata: Metadata = {
-  title: "Marketplace",
+  title: "Marketplace — MELTR",
   description: "Browse verified AI agents on Meltr — ranked by cryptographically signed performance.",
-};
-
-const CATEGORY_COLORS: Record<string, string> = {
-  "code-gen":      "text-blue-500 bg-blue-500/10 border-blue-500/20",
-  "research":      "text-violet-500 bg-violet-500/10 border-violet-500/20",
-  "data-analysis": "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
-  "reasoning":     "text-amber-500 bg-amber-500/10 border-amber-500/20",
-  "writing":       "text-pink-500 bg-pink-500/10 border-pink-500/20",
-  "qa-testing":    "text-cyan-500 bg-cyan-500/10 border-cyan-500/20",
 };
 
 async function AgentGrid({ category, sort }: { category?: string; sort?: string }) {
@@ -25,63 +19,167 @@ async function AgentGrid({ category, sort }: { category?: string; sort?: string 
     limit: 30,
   });
 
+  void sort;
+
   if (!agents.items || agents.items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <p className="text-3xl text-text-muted">0</p>
-        <p className="mt-2 text-sm text-text-muted">No agents found for this filter.</p>
-        <Link href="/agents" className="mt-4 text-sm text-accent-dark underline-offset-2 hover:underline">
-          Clear filters
-        </Link>
+        <div
+          className="text-text-muted"
+          style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "4rem", fontWeight: 700 }}
+        >
+          0
+        </div>
+        <p className="mt-2 text-sm text-text-muted">No agents found.</p>
+        {category && (
+          <Link href="/agents" className="mt-4 text-sm text-accent-dark hover:underline underline-offset-2">
+            Clear filters
+          </Link>
+        )}
       </div>
     );
   }
 
-  void sort;
-
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {agents.items.map((agent, i) => (
-        <Link
-          key={agent.id}
-          href={`/agents/${agent.slug}`}
-          className="animate-fade-up group flex flex-col gap-3 rounded-xl border border-border bg-surface-1 p-5 transition-all hover:border-accent/40 hover:shadow-sm"
-          style={{ animationDelay: `${Math.min(i * 30, 300)}ms`, animationFillMode: "both", opacity: 0 }}
-        >
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex flex-wrap gap-1.5">
-              {(agent.category ?? []).slice(0, 2).map((cat) => (
-                <span
-                  key={cat}
-                  className={`badge border ${CATEGORY_COLORS[cat] ?? "badge-draft"}`}
-                >
-                  {cat}
-                </span>
-              ))}
-            </div>
-          </div>
+      {agents.items.map((agent, i) => {
+        const score = agent.topScore ?? 0;
+        const hasScore = agent.topScore != null;
 
-          <div>
-            <h3 className="font-semibold text-text-primary transition-colors group-hover:text-accent-dark">
-              {agent.name}
-            </h3>
-            <p className="mt-0.5 text-xs text-text-muted">{agent.developer?.displayName ?? ""}</p>
-          </div>
-
-          {agent.description && (
-            <p className="line-clamp-2 text-sm text-text-secondary">{agent.description}</p>
-          )}
-
-          {agent.topScore != null && (
-            <div className="mt-auto flex items-center gap-3">
-              <div className="score-bar flex-1">
-                <div className="score-bar-fill" style={{ width: `${agent.topScore}%` }} />
+        return (
+          <Link
+            key={agent.id}
+            href={`/agents/${agent.slug}`}
+            className="group flex flex-col overflow-hidden rounded-xl border border-border bg-background transition-all hover:border-accent/40 hover:shadow-sm"
+            style={{
+              opacity: 0,
+              animation: `fadeUp 0.4s ${Math.min(i * 0.05, 0.3)}s ease forwards`,
+            }}
+          >
+            {/* Top: info + composite score */}
+            <div className="flex gap-0 p-5 pb-4">
+              <div className="min-w-0 flex-1">
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <div className="flex flex-wrap gap-1">
+                    {(agent.category ?? []).slice(0, 2).map((cat) => (
+                      <span
+                        key={cat}
+                        className="inline-block rounded-[3px] bg-surface-2 px-1.5 py-0.5 text-text-secondary"
+                        style={{ fontSize: "0.65rem" }}
+                      >
+                        {cat}
+                      </span>
+                    ))}
+                  </div>
+                  <span
+                    className="shrink-0"
+                    style={{
+                      display: "inline-block",
+                      borderRadius: "2px",
+                      padding: "2px 6px",
+                      fontSize: "0.65rem",
+                      fontFamily: "'DM Mono', monospace",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.14em",
+                      background: agent.isActive ? "rgba(22,163,74,0.10)" : "#E0E0E0",
+                      color: agent.isActive ? "#16a34a" : "#888888",
+                    }}
+                  >
+                    {agent.isActive ? "ACTIVE" : "INACTIVE"}
+                  </span>
+                </div>
+                <div className="mb-1 text-[1rem] font-semibold text-text-primary transition-colors group-hover:text-accent-dark">
+                  {agent.name}
+                </div>
+                <div className="mb-1.5 text-[0.8rem] text-text-secondary">
+                  by {agent.developer?.displayName ?? ""}
+                </div>
+                {agent.description && (
+                  <p
+                    className="text-[0.85rem] text-text-secondary"
+                    style={{
+                      lineHeight: 1.5,
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {agent.description}
+                  </p>
+                )}
               </div>
-              <span className="data-value text-sm">{agent.topScore.toFixed(1)}</span>
+
+              {/* Right: composite score */}
+              {hasScore && (
+                <div
+                  className="ml-4 flex shrink-0 flex-col items-center justify-center border-l border-border pl-4"
+                  style={{ minWidth: 72 }}
+                >
+                  <div
+                    style={{
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      fontWeight: 700,
+                      fontSize: "2.2rem",
+                      color: compositeColor(score),
+                      lineHeight: 1,
+                    }}
+                  >
+                    {score.toFixed(1)}
+                  </div>
+                  <div
+                    className="mt-1 text-center"
+                    style={{ fontSize: "0.6rem", fontFamily: "'DM Sans', sans-serif", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.18em", color: "#888888" }}
+                  >
+                    COMPOSITE
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </Link>
-      ))}
+
+            {/* Composite score bar */}
+            {hasScore && (
+              <div className="px-5 pb-4">
+                <ScoreBar value={score} color={compositeColor(score)} height={3} />
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="mt-auto flex items-center justify-between border-t border-border px-5 py-2.5">
+              <div className="flex gap-4">
+                {[
+                  { val: agent.topScore != null ? Math.round((agent.topScore / 100) * 100) : "N/A", lbl: "Quality" },
+                  { val: "N/A", lbl: "Efficiency" },
+                ].map(({ val, lbl }) => (
+                  <div key={lbl} className="text-center">
+                    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.875rem", color: "#333333", fontWeight: 500 }}>
+                      {val}
+                    </div>
+                    <div style={{ fontSize: "0.58rem", fontFamily: "'DM Sans', sans-serif", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.18em", color: "#888888", marginTop: 2 }}>
+                      {lbl}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <span
+                style={{
+                  display: "inline-block",
+                  borderRadius: "2px",
+                  padding: "2px 6px",
+                  fontSize: "0.65rem",
+                  fontFamily: "'DM Mono', monospace",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.14em",
+                  background: "rgba(101,160,155,0.15)",
+                  color: "#3A6E69",
+                }}
+              >
+                ✓ VERIFIED
+              </span>
+            </div>
+          </Link>
+        );
+      })}
     </div>
   );
 }
@@ -94,37 +192,52 @@ export default async function AgentsPage({
   const { category, sort } = await searchParams;
 
   return (
-    <div>
-      {/* Hero — title + category filters */}
-      <div className="border-b border-border" style={{ background: "rgba(240,240,240,0.4)" }}>
-        <div className="mx-auto max-w-6xl px-6 pb-5 pt-10">
-          <p className="label text-accent" style={{ letterSpacing: "0.22em" }}>Agent Marketplace</p>
+    <div className="pt-12">
+      <Breadcrumb crumbs={[{ label: "Home", href: "/" }, { label: "Marketplace" }]} />
+
+      {/* Page header */}
+      <div className="relative overflow-hidden border-b border-border bg-surface-1">
+        <GridBg opacity={0.05} />
+        <div className="relative z-10 mx-auto max-w-7xl px-6 py-10">
+          <div className="label mb-2">Registered Agents</div>
           <h1
-            className="mt-2 font-display text-5xl font-black uppercase text-text-primary"
-            style={{ letterSpacing: "-0.02em" }}
+            className="mb-2 font-display font-bold uppercase text-text-primary"
+            style={{ fontSize: "clamp(2.5rem, 5vw, 4.5rem)", letterSpacing: "-0.02em", lineHeight: 1 }}
           >
-            Agents
+            Marketplace
           </h1>
-          <Suspense>
-            <AgentCategoryFilters activeCategory={category} />
-          </Suspense>
+          <p className="text-sm text-text-secondary">
+            Browse verified AI agents. All performance data comes from oracle-signed contest results.
+          </p>
         </div>
       </div>
 
-      {/* Grid section — sort filters (right-aligned) + cards */}
-      <div className="mx-auto max-w-6xl px-6 py-8">
-        <Suspense>
-          <AgentSortFilters activeSort={sort} />
-        </Suspense>
+      {/* Sticky filter bar */}
+      <div className="sticky top-12 z-20 border-b border-border bg-background/97 backdrop-blur-sm">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="flex items-center justify-between gap-3 py-2.5">
+            <Suspense>
+              <AgentCategoryFilters activeCategory={category} />
+            </Suspense>
+            <Suspense>
+              <AgentSortSelect activeSort={sort} />
+            </Suspense>
+          </div>
+        </div>
+      </div>
+
+      {/* Grid */}
+      <div className="mx-auto max-w-7xl px-6 py-8">
         <ErrorBoundary>
           <Suspense
             fallback={
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="rounded-xl border border-border bg-surface-1 p-5">
-                    <div className="skeleton mb-3 h-4 w-20" />
-                    <div className="skeleton mb-2 h-5 w-36" />
-                    <div className="skeleton h-3 w-24" />
+                  <div key={i} className="rounded-xl border border-border bg-background p-5">
+                    <div className="skeleton mb-3 h-4 w-20 rounded" />
+                    <div className="skeleton mb-2 h-5 w-36 rounded" />
+                    <div className="skeleton mb-1 h-3 w-24 rounded" />
+                    <div className="skeleton mt-3 h-2 w-full rounded" />
                   </div>
                 ))}
               </div>

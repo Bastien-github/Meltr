@@ -2,138 +2,168 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { api } from "~/trpc/react";
-
-const Schema = z.object({
-  name: z.string().min(2).max(100),
-  description: z.string().max(500).optional(),
-  webhookUrl: z.string().url().optional().or(z.literal("")),
-  category: z.array(z.string()),
-});
-
-type FormData = z.infer<typeof Schema>;
-
-const CATEGORIES = ["code-gen", "research", "data-analysis", "reasoning", "writing", "qa-testing"];
+import { Breadcrumb } from "~/components/ui/Breadcrumb";
+import { CategoryDropdown } from "~/components/ui/CategoryDropdown";
 
 export default function NewAgentPage() {
   const router = useRouter();
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [categories, setCategories] = useState<string[]>([]);
   const [apiKeyResult, setApiKeyResult] = useState<string | null>(null);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(Schema),
-    defaultValues: { name: "", description: "", webhookUrl: "", category: [] },
-  });
+  const [copied, setCopied] = useState(false);
 
   const registerAgent = api.developer.registerAgent.useMutation({
     onSuccess: (data) => {
-      if (data.plainApiKey) {
-        setApiKeyResult(data.plainApiKey);
-      }
+      if (data.plainApiKey) setApiKeyResult(data.plainApiKey);
     },
   });
 
-  function onSubmit(data: FormData) {
-    registerAgent.mutate({ ...data, category: selectedCategories });
+  function handleSubmit() {
+    if (!name.trim() || !description.trim()) return;
+    registerAgent.mutate({
+      name,
+      description,
+      webhookUrl: webhookUrl || undefined,
+      category: categories,
+    });
   }
 
-  function toggleCategory(cat: string) {
-    setSelectedCategories((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat],
-    );
-  }
-
-  if (apiKeyResult) {
-    return (
-      <div className="mx-auto max-w-xl px-6 py-10">
-        <div className="rounded-xl border border-success/30 bg-success/5 p-6">
-          <h2 className="mb-3 font-display text-2xl font-black uppercase text-text-primary">Agent registered!</h2>
-          <p className="mb-4 text-sm text-text-muted">
-            Your API key is shown once. Copy it now — it will not be displayed again.
-          </p>
-          <div className="rounded-lg border border-border bg-surface-1 p-3 font-mono text-sm break-all text-text-primary">
-            {apiKeyResult}
-          </div>
-          <div className="mt-4 flex gap-3">
-            <button
-              className="btn-ghost text-xs"
-              onClick={() => void navigator.clipboard.writeText(apiKeyResult)}
-            >
-              Copy to clipboard
-            </button>
-            <button
-              className="btn-primary"
-              onClick={() => router.push("/developer/agents")}
-            >
-              Go to my agents
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+  function handleCopy() {
+    if (!apiKeyResult) return;
+    void navigator.clipboard.writeText(apiKeyResult);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   return (
-    <div className="mx-auto max-w-xl px-6 py-10">
-      <div className="mb-8">
-        <p className="label text-accent" style={{ letterSpacing: "0.22em" }}>Developer dashboard</p>
-        <h1 className="mt-2 font-display text-4xl font-black uppercase text-text-primary" style={{ letterSpacing: "-0.02em" }}>
-          Register Agent
-        </h1>
+    <div className="pt-12">
+      <Breadcrumb crumbs={[{ label: "Home", href: "/" }, { label: "My Agents", href: "/developer/agents" }, { label: "Register agent" }]} />
+
+      {/* Header */}
+      <div className="border-b border-border bg-surface-1 px-6 py-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="label mb-1.5">Developer Dashboard</div>
+          <h1
+            className="font-display font-bold uppercase text-text-primary"
+            style={{ fontSize: "clamp(1.75rem, 3vw, 2.5rem)", letterSpacing: "-0.01em" }}
+          >
+            Register agent
+          </h1>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
-        <div>
-          <label className="label mb-1.5 block">Agent name *</label>
-          <input {...register("name")} className="field" placeholder="e.g. CodeSolver Pro" />
-          {errors.name && <p className="mt-1 text-xs text-danger">{errors.name.message}</p>}
-        </div>
+      <div className="mx-auto max-w-lg px-6 py-10 pb-20">
+        {apiKeyResult ? (
+          /* Success state */
+          <div className="rounded-xl p-6" style={{ border: "1px solid rgba(22,163,74,0.30)", background: "rgba(22,163,74,0.05)" }}>
+            <div className="mb-4 text-base font-semibold" style={{ color: "#16A34A" }}>
+              Agent registered
+            </div>
 
-        <div>
-          <label className="label mb-1.5 block">Description</label>
-          <textarea {...register("description")} className="field-area" rows={3} placeholder="What does your agent do?" />
-        </div>
+            {/* Warning */}
+            <div className="mb-4 rounded-md p-3" style={{ border: "1px solid rgba(217,119,6,0.30)", background: "rgba(217,119,6,0.05)" }}>
+              <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.8rem", color: "#d97706" }}>
+                ⚠ Save your API key now. It will not be shown again.
+              </span>
+            </div>
 
-        <div>
-          <label className="label mb-1.5 block">Webhook URL</label>
-          <input {...register("webhookUrl")} className="field" placeholder="https://your-agent.example.com/webhook" />
-          <p className="mt-1 text-xs text-text-muted">Your agent receives tasks as POST requests. Leave empty for direct Anthropic API mode.</p>
-          {errors.webhookUrl && <p className="mt-1 text-xs text-danger">{errors.webhookUrl.message}</p>}
-        </div>
+            {/* API key display */}
+            <div
+              className="mb-4 rounded-lg p-3"
+              style={{
+                fontFamily: "'DM Mono', monospace",
+                fontSize: "0.85rem",
+                color: "#333",
+                background: "#F7F7F7",
+                border: "1px solid #E0E0E0",
+                wordBreak: "break-all",
+                lineHeight: 1.5,
+              }}
+            >
+              {apiKeyResult}
+            </div>
 
-        <div>
-          <label className="label mb-2 block">Categories</label>
-          <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((cat) => {
-              const active = selectedCategories.includes(cat);
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => toggleCategory(cat)}
-                  className={`rounded-full border px-3 py-1 font-mono text-2xs uppercase transition-colors bg-background ${
-                    active ? "border-accent bg-accent/10 text-accent" : "border-border text-text-muted hover:border-accent/40"
-                  }`}
-                  style={{ letterSpacing: "0.14em" }}
-                >
-                  {cat}
-                </button>
-              );
-            })}
+            <div className="flex gap-2.5">
+              <button
+                className="btn-ghost text-sm"
+                onClick={handleCopy}
+              >
+                {copied ? "✓ Copied!" : "Copy to clipboard"}
+              </button>
+              <button
+                className="btn-primary text-sm"
+                onClick={() => router.push("/developer/agents")}
+              >
+                Go to my agents →
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          /* Registration form */
+          <div className="flex flex-col gap-5">
+            {/* Name */}
+            <div>
+              <label className="label mb-1.5 block">Agent name *</label>
+              <input
+                className="field w-full"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder='e.g. "ResearchBot v2"'
+              />
+            </div>
 
-        {registerAgent.error && (
-          <p className="text-sm text-danger">{registerAgent.error.message}</p>
+            {/* Description */}
+            <div>
+              <label className="label mb-1 block">Description *</label>
+              <p className="mb-1.5 text-xs text-text-muted">What does this agent do? What tasks is it best at?</p>
+              <textarea
+                className="field-area w-full"
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Describe your agent's strengths and intended use cases."
+              />
+            </div>
+
+            {/* Webhook URL */}
+            <div>
+              <label className="label mb-1 block">Webhook URL</label>
+              <p className="mb-1.5 text-xs text-text-muted">
+                Your endpoint receives the task and returns the agent&apos;s response. Leave empty to use direct Anthropic API mode.
+              </p>
+              <input
+                className="field w-full"
+                type="url"
+                value={webhookUrl}
+                onChange={(e) => setWebhookUrl(e.target.value)}
+                placeholder="https://your-server.com/meltr-webhook"
+              />
+            </div>
+
+            {/* Categories */}
+            <div>
+              <label className="label mb-1 block">Categories</label>
+              <p className="mb-1.5 text-xs text-text-muted">Select up to 3 categories.</p>
+              <CategoryDropdown selected={categories} onChange={setCategories} />
+            </div>
+
+            {registerAgent.error && (
+              <p className="text-sm" style={{ color: "#dc2626" }}>{registerAgent.error.message}</p>
+            )}
+
+            <button
+              className="btn-primary w-full justify-center"
+              disabled={!name.trim() || !description.trim() || registerAgent.isPending}
+              onClick={handleSubmit}
+            >
+              {registerAgent.isPending ? "Registering…" : "Register agent →"}
+            </button>
+          </div>
         )}
-
-        <button type="submit" className="btn-primary mt-2" disabled={registerAgent.isPending}>
-          {registerAgent.isPending ? "Registering..." : "Register agent"}
-        </button>
-      </form>
+      </div>
     </div>
   );
 }

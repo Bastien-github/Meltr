@@ -6,15 +6,15 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { api } from "~/trpc/react";
+import { Breadcrumb } from "~/components/ui/Breadcrumb";
+import { CategoryDropdown } from "~/components/ui/CategoryDropdown";
 
-const STEPS = ["Details", "Task", "Budget", "Rubric"] as const;
-
-const CATEGORIES = ["code-gen", "research", "data-analysis", "reasoning", "writing", "qa-testing"];
+const STEPS = ["Details", "Task", "Budget & Judge", "Rubric"] as const;
+type Step = typeof STEPS[number];
 
 const Step1Schema = z.object({
   title: z.string().min(3).max(200),
-  description: z.string().max(2000).optional(),
-  category: z.array(z.string()).max(3),
+  description: z.string().min(1).max(2000),
   taskVisibility: z.enum(["ON_OPEN", "ON_LOCK", "ON_RUN"]),
 });
 
@@ -33,7 +33,12 @@ const Step4Schema = z.object({
   rubric: z.string().min(20),
 });
 
-type AllData = z.infer<typeof Step1Schema> & z.infer<typeof Step2Schema> & z.infer<typeof Step3Schema> & z.infer<typeof Step4Schema>;
+type AllData = z.infer<typeof Step1Schema> &
+  z.infer<typeof Step2Schema> &
+  z.infer<typeof Step3Schema> &
+  z.infer<typeof Step4Schema> & {
+    category: string[];
+  };
 
 export default function NewContestPage() {
   const router = useRouter();
@@ -41,8 +46,8 @@ export default function NewContestPage() {
   const [data, setData] = useState<Partial<AllData>>({
     category: [],
     taskVisibility: "ON_OPEN",
-    judgeModelVersion: "claude-haiku-4-5-20251001",
-    tokenBudget: 50000,
+    judgeModelVersion: "claude-sonnet-4-6",
+    tokenBudget: 80000,
   });
 
   const createContest = api.company.createContest.useMutation({
@@ -61,192 +66,352 @@ export default function NewContestPage() {
     }
   }
 
+  function prevStep() {
+    setStep((s) => Math.max(0, s - 1));
+  }
+
   return (
-    <div className="mx-auto max-w-2xl px-6 py-10">
-      <div className="mb-8">
-        <p className="label text-accent" style={{ letterSpacing: "0.22em" }}>New contest</p>
-        <h1 className="mt-2 font-display text-4xl font-black uppercase text-text-primary" style={{ letterSpacing: "-0.02em" }}>
-          Create Contest
-        </h1>
+    <div className="pt-12">
+      <Breadcrumb crumbs={[{ label: "Home", href: "/" }, { label: "My Contests", href: "/company/my-contests" }, { label: "Create contest" }]} />
+
+      {/* Header */}
+      <div className="border-b border-border bg-surface-1 px-6 py-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="label mb-1.5">New Contest</div>
+          <h1
+            className="font-display font-bold uppercase text-text-primary"
+            style={{ fontSize: "clamp(1.75rem, 3vw, 2.5rem)", letterSpacing: "-0.01em" }}
+          >
+            Create contest
+          </h1>
+        </div>
       </div>
 
-      {/* Step indicators */}
-      <div className="mb-8 flex items-center gap-2">
-        {STEPS.map((label, i) => (
-          <div key={label} className="flex items-center gap-2">
-            <div
-              className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-all ${
-                i === step
-                  ? "bg-accent-dark text-white"
-                  : i < step
-                  ? "bg-accent/20 text-accent-dark"
-                  : "bg-surface-2 text-text-muted"
-              }`}
-            >
-              {i < step ? "✓" : i + 1}
+      <div className="mx-auto max-w-lg px-6 py-10 pb-20">
+        {/* Step indicator */}
+        <div className="mb-10 flex items-center justify-center">
+          {STEPS.map((label, i) => (
+            <div key={label} className="flex items-center">
+              <div className="flex flex-col items-center gap-1.5">
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: i < step ? "rgba(101,160,155,0.20)" : i === step ? "#3A6E69" : "#E8E8E8",
+                    color: i < step ? "#3A6E69" : i === step ? "#fff" : "#888",
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontWeight: 700,
+                    fontSize: "0.9rem",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  {i < step ? "✓" : i + 1}
+                </div>
+                <span
+                  style={{
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontSize: "0.7rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
+                    color: i === step ? "#333" : "#888",
+                  }}
+                >
+                  {label}
+                </span>
+              </div>
+              {i < STEPS.length - 1 && (
+                <div
+                  style={{
+                    flex: 1,
+                    height: 1,
+                    background: i < step ? "rgba(101,160,155,0.40)" : "#E0E0E0",
+                    margin: "0 8px",
+                    marginBottom: 22,
+                    minWidth: 20,
+                  }}
+                />
+              )}
             </div>
-            <span className={`text-xs ${i === step ? "text-text-primary font-medium" : "text-text-muted"}`}>
-              {label}
-            </span>
-            {i < STEPS.length - 1 && <div className="mx-1 h-px w-6 bg-border" />}
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      {/* Step forms */}
-      {step === 0 && <Step1Form defaults={data} onNext={nextStep} categories={CATEGORIES} />}
-      {step === 1 && <Step2Form defaults={data} onNext={nextStep} />}
-      {step === 2 && <Step3Form defaults={data} onNext={nextStep} />}
-      {step === 3 && (
-        <Step4Form
-          defaults={data}
-          onNext={nextStep}
-          isPending={createContest.isPending}
-          error={createContest.error?.message}
-        />
-      )}
+        {/* Step forms */}
+        {step === 0 && (
+          <Step1Form
+            defaults={data}
+            onNext={(values) => nextStep(values)}
+          />
+        )}
+        {step === 1 && (
+          <Step2Form
+            defaults={data}
+            onNext={(values) => nextStep(values)}
+            onBack={prevStep}
+          />
+        )}
+        {step === 2 && (
+          <Step3Form
+            defaults={data}
+            onNext={(values) => nextStep(values)}
+            onBack={prevStep}
+          />
+        )}
+        {step === 3 && (
+          <Step4Form
+            defaults={data}
+            onNext={(values) => nextStep(values)}
+            onBack={prevStep}
+            isPending={createContest.isPending}
+            error={createContest.error?.message}
+          />
+        )}
+      </div>
     </div>
   );
 }
 
-function Step1Form({ defaults, onNext, categories }: { defaults: Partial<AllData>; onNext: (v: Partial<AllData>) => void; categories: string[] }) {
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm({
+/* ── Step 1: Details ───────────────────────── */
+function Step1Form({
+  defaults,
+  onNext,
+}: {
+  defaults: Partial<AllData>;
+  onNext: (v: Partial<AllData>) => void;
+}) {
+  const [categories, setCategories] = useState<string[]>(defaults.category ?? []);
+  const [visibility, setVisibility] = useState<"ON_OPEN" | "ON_LOCK" | "ON_RUN">(defaults.taskVisibility ?? "ON_OPEN");
+
+  const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(Step1Schema),
     defaultValues: {
       title: defaults.title ?? "",
       description: defaults.description ?? "",
-      category: defaults.category ?? [],
       taskVisibility: defaults.taskVisibility ?? "ON_OPEN",
     },
   });
 
-  const selected = watch("category") as string[];
+  function onSubmit(values: z.infer<typeof Step1Schema>) {
+    onNext({ ...values, taskVisibility: visibility, category: categories });
+  }
+
+  const visibilityOptions: { value: "ON_OPEN" | "ON_LOCK" | "ON_RUN"; label: string }[] = [
+    { value: "ON_OPEN", label: "On open" },
+    { value: "ON_LOCK", label: "On lock" },
+    { value: "ON_RUN", label: "On run" },
+  ];
 
   return (
-    <form onSubmit={handleSubmit(onNext)} className="flex flex-col gap-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
       <div>
         <label className="label mb-1.5 block">Contest title *</label>
-        <input {...register("title")} className="field" placeholder="e.g. Code review automation benchmark" />
-        {errors.title && <p className="mt-1 text-xs text-danger">{errors.title.message}</p>}
+        <input
+          {...register("title")}
+          className="field w-full"
+          placeholder='e.g. "Code Review Automation Challenge"'
+        />
+        {errors.title && <p className="mt-1 text-xs" style={{ color: "#dc2626" }}>{errors.title.message}</p>}
       </div>
 
       <div>
-        <label className="label mb-1.5 block">Description</label>
-        <textarea {...register("description")} className="field-area" rows={3} placeholder="What is this contest testing?" />
+        <label className="label mb-1 block">Description *</label>
+        <p className="mb-1.5 text-xs text-text-muted">Describe what participants will learn from this benchmark.</p>
+        <textarea
+          {...register("description")}
+          className="field-area w-full"
+          rows={3}
+          placeholder="A brief description visible to developers browsing contests."
+        />
+        {errors.description && <p className="mt-1 text-xs" style={{ color: "#dc2626" }}>{errors.description.message}</p>}
       </div>
 
       <div>
-        <label className="label mb-1.5 block">Categories (max 3)</label>
-        <div className="flex flex-wrap gap-2">
-          {categories.map((cat) => {
-            const active = selected.includes(cat);
-            return (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => {
-                  const next = active ? selected.filter((c) => c !== cat) : selected.length < 3 ? [...selected, cat] : selected;
-                  setValue("category", next);
-                }}
-                className={`rounded-full border px-3 py-1 font-mono text-2xs uppercase transition-colors bg-background ${
-                  active ? "border-accent bg-accent/10 text-accent" : "border-border text-text-muted hover:border-accent/40"
-                }`}
-                style={{ letterSpacing: "0.14em" }}
-              >
-                {cat}
-              </button>
-            );
-          })}
+        <label className="label mb-1 block">Categories</label>
+        <p className="mb-1.5 text-xs text-text-muted">Select up to 3 categories.</p>
+        <CategoryDropdown selected={categories} onChange={setCategories} />
+      </div>
+
+      <div>
+        <label className="label mb-1 block">Task visibility</label>
+        <p className="mb-1.5 text-xs text-text-muted">Controls when entrants see the task definition.</p>
+        <div className="flex gap-2">
+          {visibilityOptions.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setVisibility(value)}
+              style={{
+                flex: 1,
+                padding: "8px",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: "0.8rem",
+                border: visibility === value ? "1px solid rgba(101,160,155,0.60)" : "1px solid #E0E0E0",
+                background: visibility === value ? "rgba(101,160,155,0.10)" : "transparent",
+                color: visibility === value ? "#3A6E69" : "#666",
+              }}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div>
-        <label className="label mb-1.5 block">Task visibility</label>
-        <select {...register("taskVisibility")} className="field">
-          <option value="ON_OPEN">Reveal when contest opens</option>
-          <option value="ON_LOCK">Reveal when contest locks</option>
-          <option value="ON_RUN">Reveal when contest starts running</option>
-        </select>
-      </div>
-
-      <button type="submit" className="btn-primary mt-2">Next: Task definition →</button>
+      <button type="submit" className="btn-primary w-full justify-center">
+        Next: Task definition →
+      </button>
     </form>
   );
 }
 
-function Step2Form({ defaults, onNext }: { defaults: Partial<AllData>; onNext: (v: Partial<AllData>) => void }) {
+/* ── Step 2: Task ──────────────────────────── */
+function Step2Form({
+  defaults,
+  onNext,
+  onBack,
+}: {
+  defaults: Partial<AllData>;
+  onNext: (v: Partial<AllData>) => void;
+  onBack: () => void;
+}) {
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(Step2Schema),
-    defaultValues: { taskDefinition: defaults.taskDefinition ?? "", scheduledStartAt: defaults.scheduledStartAt ?? "" },
-  });
-
-  return (
-    <form onSubmit={handleSubmit(onNext)} className="flex flex-col gap-5">
-      <div>
-        <label className="label mb-1.5 block">Task definition *</label>
-        <textarea {...register("taskDefinition")} className="field-area" rows={10} placeholder="Describe exactly what agents must do..." />
-        {errors.taskDefinition && <p className="mt-1 text-xs text-danger">{errors.taskDefinition.message}</p>}
-      </div>
-
-      <div>
-        <label className="label mb-1.5 block">Scheduled start (optional)</label>
-        <input {...register("scheduledStartAt")} type="datetime-local" className="field" />
-      </div>
-
-      <button type="submit" className="btn-primary mt-2">Next: Budget & deadline →</button>
-    </form>
-  );
-}
-
-function Step3Form({ defaults, onNext }: { defaults: Partial<AllData>; onNext: (v: Partial<AllData>) => void }) {
-  const { register, handleSubmit, watch, formState: { errors } } = useForm({
-    resolver: zodResolver(Step3Schema),
     defaultValues: {
-      tokenBudget: defaults.tokenBudget ?? 50000,
-      deadline: defaults.deadline ?? "",
-      judgeModelVersion: defaults.judgeModelVersion ?? "claude-haiku-4-5-20251001",
+      taskDefinition: defaults.taskDefinition ?? "",
+      scheduledStartAt: defaults.scheduledStartAt ?? "",
     },
   });
 
-  const budget = watch("tokenBudget");
-  const estimatedCost = ((budget ?? 50000) / 1000 * 0.01).toFixed(2);
-
   return (
     <form onSubmit={handleSubmit(onNext)} className="flex flex-col gap-5">
       <div>
-        <label className="label mb-1.5 block">Token budget per agent *</label>
-        <input {...register("tokenBudget", { valueAsNumber: true })} type="number" className="field" min={1000} max={1000000} step={1000} />
-        <p className="mt-1 text-xs text-text-muted">Estimated cost: ~${estimatedCost} per agent at $0.01/1K tokens</p>
-        {errors.tokenBudget && <p className="mt-1 text-xs text-danger">{errors.tokenBudget.message}</p>}
+        <label className="label mb-1 block">Task definition *</label>
+        <p className="mb-1.5 text-xs text-text-muted">The exact task sent to agents. Be precise.</p>
+        <textarea
+          {...register("taskDefinition")}
+          className="field-area w-full"
+          rows={10}
+          style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.85rem" }}
+          placeholder={`Describe the task in full detail.\n\nExample:\nYou are given a repository containing a buggy implementation.\nIdentify and fix all issues. Return corrected files only.\n\nEvaluation criteria will be specified in the rubric.`}
+        />
+        {errors.taskDefinition && <p className="mt-1 text-xs" style={{ color: "#dc2626" }}>{errors.taskDefinition.message}</p>}
       </div>
 
       <div>
-        <label className="label mb-1.5 block">Deadline *</label>
-        <input {...register("deadline")} type="datetime-local" className="field" />
-        {errors.deadline && <p className="mt-1 text-xs text-danger">{errors.deadline.message}</p>}
+        <label className="label mb-1 block">Scheduled start (optional)</label>
+        <p className="mb-1.5 text-xs text-text-muted">Leave empty to publish manually after payment.</p>
+        <input {...register("scheduledStartAt")} type="datetime-local" className="field w-full" />
       </div>
 
-      <div>
-        <label className="label mb-1.5 block">Judge model</label>
-        <select {...register("judgeModelVersion")} className="field">
-          <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (fast, affordable)</option>
-          <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (balanced)</option>
-          <option value="claude-opus-4-7">Claude Opus 4.7 (most capable)</option>
-        </select>
+      <div className="flex gap-3">
+        <button type="button" className="btn-ghost" onClick={onBack}>← Back</button>
+        <button type="submit" className="btn-primary flex-1 justify-center">Next: Budget & deadline →</button>
       </div>
-
-      <div className="rounded-lg border border-border bg-surface-1 p-4">
-        <p className="label mb-2">Platform fee</p>
-        <p className="font-display text-2xl font-black text-text-primary">$50</p>
-        <p className="text-xs text-text-muted">One-time fee, charged via Stripe Checkout when you publish.</p>
-      </div>
-
-      <button type="submit" className="btn-primary mt-2">Next: Rubric →</button>
     </form>
   );
 }
 
-function Step4Form({ defaults, onNext, isPending, error }: { defaults: Partial<AllData>; onNext: (v: Partial<AllData>) => void; isPending: boolean; error?: string }) {
+/* ── Step 3: Budget & Judge ────────────────── */
+function Step3Form({
+  defaults,
+  onNext,
+  onBack,
+}: {
+  defaults: Partial<AllData>;
+  onNext: (v: Partial<AllData>) => void;
+  onBack: () => void;
+}) {
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    resolver: zodResolver(Step3Schema),
+    defaultValues: {
+      tokenBudget: defaults.tokenBudget ?? 80000,
+      deadline: defaults.deadline ?? "",
+      judgeModelVersion: defaults.judgeModelVersion ?? "claude-sonnet-4-6",
+    },
+  });
+
+  return (
+    <form onSubmit={handleSubmit(onNext)} className="flex flex-col gap-5">
+      <div>
+        <label className="label mb-1 block">Token budget *</label>
+        <p className="mb-1.5 text-xs text-text-muted">Each agent run is hard-limited to this token count.</p>
+        <input
+          {...register("tokenBudget", { valueAsNumber: true })}
+          type="number"
+          className="field w-full"
+          min={1000}
+          max={1000000}
+          step={1000}
+        />
+        {errors.tokenBudget && <p className="mt-1 text-xs" style={{ color: "#dc2626" }}>{errors.tokenBudget.message}</p>}
+      </div>
+
+      <div>
+        <label className="label mb-1 block">Deadline *</label>
+        <input {...register("deadline")} type="datetime-local" className="field w-full" />
+        {errors.deadline && <p className="mt-1 text-xs" style={{ color: "#dc2626" }}>{errors.deadline.message}</p>}
+      </div>
+
+      <div>
+        <label className="label mb-1 block">Judge model</label>
+        <p className="mb-1.5 text-xs text-text-muted">Sonnet is recommended for most tasks. Opus for high-stakes evaluations.</p>
+        <select {...register("judgeModelVersion")} className="field w-full">
+          <option value="claude-haiku-4-5-20251001">claude-haiku-4-5</option>
+          <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
+          <option value="claude-opus-4-7">claude-opus-4-7</option>
+        </select>
+      </div>
+
+      {/* Fee summary */}
+      <div
+        className="rounded-xl p-5"
+        style={{ border: "1px solid rgba(101,160,155,0.30)", background: "rgba(101,160,155,0.04)" }}
+      >
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-sm text-text-secondary">Contest fee</span>
+          <span
+            style={{
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontWeight: 700,
+              fontSize: "2rem",
+              color: "#3A6E69",
+              lineHeight: 1,
+            }}
+          >
+            $50.00
+          </span>
+        </div>
+        <p className="text-xs text-text-muted" style={{ margin: 0 }}>
+          Flat fee covers isolated execution for all entries, LLM judging, oracle signing, S3 export, and Base L2 anchoring.
+        </p>
+      </div>
+
+      <div className="flex gap-3">
+        <button type="button" className="btn-ghost" onClick={onBack}>← Back</button>
+        <button type="submit" className="btn-primary flex-1 justify-center">Next: Rubric →</button>
+      </div>
+    </form>
+  );
+}
+
+/* ── Step 4: Rubric ────────────────────────── */
+function Step4Form({
+  defaults,
+  onNext,
+  onBack,
+  isPending,
+  error,
+}: {
+  defaults: Partial<AllData>;
+  onNext: (v: Partial<AllData>) => void;
+  onBack: () => void;
+  isPending: boolean;
+  error?: string;
+}) {
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(Step4Schema),
     defaultValues: { rubric: defaults.rubric ?? "" },
@@ -255,17 +420,30 @@ function Step4Form({ defaults, onNext, isPending, error }: { defaults: Partial<A
   return (
     <form onSubmit={handleSubmit(onNext)} className="flex flex-col gap-5">
       <div>
-        <label className="label mb-1.5 block">Rubric *</label>
-        <p className="mb-2 text-xs text-text-muted">Describe how the judge should evaluate agent outputs. Be specific about what earns high scores.</p>
-        <textarea {...register("rubric")} className="field-area" rows={12} placeholder="Score from 0-100 based on:\n- Correctness: 50pts — does the output solve the task?\n- Completeness: 30pts — are all requirements addressed?\n- Code quality: 20pts — is the code clean and well-structured?" />
-        {errors.rubric && <p className="mt-1 text-xs text-danger">{errors.rubric.message}</p>}
+        <label className="label mb-1 block">Scoring rubric *</label>
+        <p className="mb-1.5 text-xs text-text-muted">Instructions for the LLM judge. Must specify how to return JSON.</p>
+        <textarea
+          {...register("rubric")}
+          className="field-area w-full"
+          rows={12}
+          style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.85rem" }}
+          placeholder={`Score the agent's response on the following criteria:\n\n- Correctness (0–40): Does the output satisfy the core task requirement?\n- Completeness (0–30): Are all required components present?\n- Code quality (0–20): Is the code clean, readable, and well-structured?\n- Edge cases (0–10): Does the solution handle edge cases?\n\nReturn JSON: { "score": <0-100>, "rationale": "<min 20 chars>" }`}
+        />
+        {errors.rubric && <p className="mt-1 text-xs" style={{ color: "#dc2626" }}>{errors.rubric.message}</p>}
       </div>
 
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && <p className="text-sm" style={{ color: "#dc2626" }}>{error}</p>}
 
-      <button type="submit" className="btn-primary mt-2" disabled={isPending}>
-        {isPending ? "Creating contest..." : "Create & continue to payment →"}
-      </button>
+      <div className="flex gap-3">
+        <button type="button" className="btn-ghost" onClick={onBack}>← Back</button>
+        <button
+          type="submit"
+          className="btn-primary flex-1 justify-center"
+          disabled={isPending}
+        >
+          {isPending ? "Creating contest…" : "Create contest & continue to payment →"}
+        </button>
+      </div>
     </form>
   );
 }

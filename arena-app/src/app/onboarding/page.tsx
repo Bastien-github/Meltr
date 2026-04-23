@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { api } from "~/trpc/react";
+import { GridBg } from "~/components/ui/GridBg";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -21,6 +22,8 @@ export default function OnboardingPage() {
     onError: (e) => toast.error(e.message),
   });
 
+  const isPending = completeDev.isPending || completeCompany.isPending;
+
   function handleSubmit() {
     if (!role) { toast.error("Please select a role"); return; }
     if (role === "DEVELOPER") {
@@ -32,78 +35,97 @@ export default function OnboardingPage() {
     }
   }
 
+  const nameValue = role === "DEVELOPER" ? displayName : companyName;
+  const canSubmit = role && nameValue.trim() && !isPending;
+
   return (
-    <div className="flex min-h-[calc(100vh-3rem)] flex-col items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <p className="label text-accent" style={{ letterSpacing: "0.22em" }}>Welcome to Meltr</p>
-          <h1
-            className="mt-3 font-display text-4xl font-black uppercase text-text-primary"
-            style={{ letterSpacing: "-0.02em" }}
+    <div
+      className="relative flex min-h-screen items-center justify-center bg-background px-4 pt-12"
+    >
+      <GridBg opacity={0.05} />
+
+      <div
+        className="relative z-10 w-full max-w-sm rounded-xl bg-background p-8"
+        style={{ border: "1px solid #E0E0E0", boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}
+      >
+        {/* Logo mark */}
+        <div className="mb-5 flex items-center gap-1.5">
+          <span style={{ color: "#65A09B", fontSize: "1rem" }}>◘</span>
+          <span
+            style={{
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontWeight: 700,
+              fontSize: "1rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              color: "#333",
+            }}
           >
-            Get started
-          </h1>
-          <p className="mt-2 text-sm text-text-muted">Tell us how you&apos;ll use Meltr.</p>
+            MELTR
+          </span>
         </div>
+
+        <div className="label mb-2">Welcome</div>
+        <div
+          className="mb-2.5 font-display font-bold uppercase text-text-primary"
+          style={{ fontSize: "2.5rem", letterSpacing: "-0.01em", lineHeight: 1 }}
+        >
+          Get started
+        </div>
+        <p className="mb-6 text-sm text-text-secondary" style={{ lineHeight: 1.6 }}>
+          Tell us how you&apos;ll use Meltr to set up your account correctly.
+        </p>
 
         {/* Role selector */}
-        <div className="flex flex-col gap-3">
-          <button
-            onClick={() => setRole("DEVELOPER")}
-            className={`rounded-xl border p-5 text-left transition-all ${
-              role === "DEVELOPER"
-                ? "border-accent bg-accent/5"
-                : "border-border hover:border-accent/40"
-            }`}
-          >
-            <p className="font-semibold text-text-primary">I&apos;m a developer</p>
-            <p className="mt-1 text-sm text-text-muted">Register AI agents and enter benchmarking contests.</p>
-          </button>
-
-          <button
-            onClick={() => setRole("COMPANY")}
-            className={`rounded-xl border p-5 text-left transition-all ${
-              role === "COMPANY"
-                ? "border-accent bg-accent/5"
-                : "border-border hover:border-accent/40"
-            }`}
-          >
-            <p className="font-semibold text-text-primary">I&apos;m a company</p>
-            <p className="mt-1 text-sm text-text-muted">Post contests and discover the best AI agents for my use case.</p>
-          </button>
+        <div className="mb-5 flex flex-col gap-2.5">
+          {(
+            [
+              ["DEVELOPER", "I'm a developer", "I build AI agents and want to enter contests to benchmark performance."],
+              ["COMPANY",   "I represent a company", "I want to post benchmark contests and evaluate AI agents for my team."],
+            ] as [typeof role, string, string][]
+          ).map(([r, title, desc]) => (
+            <button
+              key={r}
+              onClick={() => setRole(r)}
+              className="rounded-lg p-3.5 text-left transition-all"
+              style={{
+                border: role === r ? "1px solid rgba(101,160,155,0.60)" : "1px solid #E0E0E0",
+                borderLeft: role === r ? "3px solid #3A6E69" : "3px solid transparent",
+                background: role === r ? "rgba(101,160,155,0.05)" : "#fff",
+              }}
+            >
+              <div className="mb-1 text-sm font-semibold text-text-primary">{title}</div>
+              <p className="text-xs text-text-secondary" style={{ lineHeight: 1.5, margin: 0 }}>{desc}</p>
+            </button>
+          ))}
         </div>
 
-        {/* Fields */}
-        {role === "DEVELOPER" && (
-          <div className="mt-5">
-            <label className="label mb-1.5 block">Display name</label>
+        {/* Name field — shown after role selection */}
+        {role && (
+          <div className="mb-5">
+            <label className="label mb-1.5 block">
+              {role === "DEVELOPER" ? "Display name" : "Company name"}
+            </label>
             <input
-              className="field"
-              placeholder="Your public name on Meltr"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-            />
-          </div>
-        )}
-
-        {role === "COMPANY" && (
-          <div className="mt-5">
-            <label className="label mb-1.5 block">Company name</label>
-            <input
-              className="field"
-              placeholder="Your company or team name"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
+              className="field w-full"
+              placeholder={role === "DEVELOPER" ? "e.g. @arjun_dev" : "e.g. Acme Corp"}
+              value={role === "DEVELOPER" ? displayName : companyName}
+              onChange={(e) =>
+                role === "DEVELOPER"
+                  ? setDisplayName(e.target.value)
+                  : setCompanyName(e.target.value)
+              }
+              autoFocus
             />
           </div>
         )}
 
         <button
-          className="btn-primary mt-6 w-full justify-center"
-          disabled={!role || completeDev.isPending || completeCompany.isPending}
+          className="btn-primary w-full justify-center"
+          disabled={!canSubmit}
           onClick={handleSubmit}
         >
-          {(completeDev.isPending || completeCompany.isPending) ? "Saving..." : "Continue"}
+          {isPending ? "Setting up your account…" : "Continue →"}
         </button>
       </div>
     </div>
