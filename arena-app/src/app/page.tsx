@@ -44,7 +44,7 @@ export default function HomePage() {
           >
             The verified performance layer for AI agents. Companies post benchmark
             contests. Developers enter their agents. Every result is
-            cryptographically signed, isolated in execution, and anchored on Base L2.
+            cryptographically signed, isolated in execution, and anchored on Algorand.
           </p>
 
           <div
@@ -73,7 +73,7 @@ export default function HomePage() {
             {(
               [
                 ["100%", "Verified results"],
-                ["Base L2", "On-chain anchoring"],
+                ["Algorand", "On-chain anchoring"],
                 ["HMAC-SHA256", "Tamper-proof oracle"],
               ] as [string, string][]
             ).map(([val, lbl], i) => (
@@ -125,7 +125,7 @@ export default function HomePage() {
               [
                 ["Post a contest", "Define your task, token budget, and rubric. Pay the flat $50 fee to publish."],
                 ["Agents compete", "Developers enter their registered agents. Meltr runs each in a sandboxed ECS container."],
-                ["Oracle signs results", "Token usage is extracted from the API response. Every result is HMAC-signed, exported to S3, and anchored on Base L2."],
+                ["Oracle signs results", "Token usage is extracted from the API response. Every result is HMAC-signed, exported to S3, and anchored on Algorand."],
               ] as [string, string][]
             ).map(([title, desc], i) => (
               <div key={i} className="text-center">
@@ -154,7 +154,7 @@ export default function HomePage() {
             </div>
             <p className="mb-5 text-sm text-text-secondary" style={{ lineHeight: 1.6 }}>
               Register your agent once. Enter any open contest. Your results build a
-              permanent, verifiable track record — no marketing claims, just
+              permanent, verifiable track record. No marketing claims, just
               cryptographic proof.
             </p>
             <ul className="mb-6 flex flex-col gap-2">
@@ -184,7 +184,7 @@ export default function HomePage() {
               procurement decisions.
             </p>
             <ul className="mb-6 flex flex-col gap-2">
-              {["$50 flat fee per contest", "LLM-as-judge with your model choice", "All results publicly verifiable on Base L2", "Export audit reports as PDF"].map((f) => (
+              {["$50 flat fee per contest", "LLM-as-judge with your model choice", "All results publicly verifiable on Algorand", "Export audit reports as PDF"].map((f) => (
                 <li key={f} className="flex gap-2 text-sm text-text-secondary">
                   <span className="text-accent-dark">✓</span>{f}
                 </li>
@@ -213,7 +213,7 @@ export default function HomePage() {
             </h2>
             <p className="mx-auto max-w-xl text-sm text-text-secondary" style={{ lineHeight: 1.6 }}>
               Meltr&apos;s oracle signs each result before writing it anywhere. The same
-              hash appears in our database, on S3, and on Base L2.
+              hash appears in our database, on S3, and on Algorand.
             </p>
           </div>
 
@@ -222,7 +222,7 @@ export default function HomePage() {
               [
                 ["⬡", "HMAC-SHA256 Oracle", "Every result is signed with a secret key before being committed to any store. The input hash is logged; the secret never is."],
                 ["◫", "S3 Public Export", "Signed results are exported to a public S3 bucket immediately after signing. Anyone can download and verify independently."],
-                ["⧫", "Base L2 Anchor", "The result hash is submitted to a smart contract on Base L2. The transaction hash is stored alongside the result for on-chain verification."],
+                ["⧫", "Algorand Anchor", "The result hash is submitted to a smart contract on Algorand. The transaction hash is stored alongside the result for on-chain verification."],
               ] as [string, string, string][]
             ).map(([icon, title, body]) => (
               <div key={title} className="rounded-xl border border-border bg-background p-5">
@@ -245,7 +245,7 @@ export default function HomePage() {
         </h2>
         <p className="mx-auto mb-7 max-w-lg text-base text-text-secondary" style={{ lineHeight: 1.6 }}>
           Whether you&apos;re a developer proving your agent&apos;s edge, or a company
-          evaluating AI tooling — start here.
+          evaluating AI tooling. Start here.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link

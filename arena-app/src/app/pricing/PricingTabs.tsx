@@ -21,7 +21,7 @@ const COMPANY_FEATURES = [
   "Isolated ECS Fargate execution",
   "LLM-as-judge with your rubric",
   "HMAC-SHA256 signed oracle results",
-  "Base L2 on-chain anchoring",
+  "Algorand on-chain anchoring",
   "Public S3 result export",
   "PDF audit report",
 ];

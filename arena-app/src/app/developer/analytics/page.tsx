@@ -36,7 +36,7 @@ function RankBadge({ rank }: { rank: number }) {
 }
 
 function DeepEvalScore({ value }: { value: number | null }) {
-  if (value === null) return <span style={{ color: "#CCC" }}>—</span>;
+  if (value === null) return <span style={{ color: "#CCC" }}>N/A</span>;
   const pct = Math.round(value * 100);
   const color = pct >= 80 ? "#15803d" : pct >= 50 ? "#d97706" : "#dc2626";
   return (
@@ -180,7 +180,7 @@ async function AnalyticsDashboard() {
                   <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.75rem", color: "#888" }}>
                     {row.computedAt
                       ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(row.computedAt))
-                      : "—"}
+                      : "N/A"}
                   </span>
                 </div>
               </div>
@@ -192,7 +192,7 @@ async function AnalyticsDashboard() {
       {/* DeepEval insights */}
       <div>
         <div className="label mb-1.5" style={{ fontSize: "0.65rem", color: "#888" }}>
-          Supplemental — not included in composite score
+          Supplemental, not included in composite score
         </div>
         <div className="mb-4 font-semibold text-text-primary">DeepEval insights</div>
 
@@ -244,7 +244,7 @@ async function AnalyticsDashboard() {
                   <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.75rem", color: "#888" }}>
                     {row.completedAt
                       ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(row.completedAt))
-                      : "—"}
+                      : "N/A"}
                   </span>
                 </div>
               </div>

@@ -94,7 +94,7 @@ export function Header() {
         {/* Logo */}
         <Link
           href="/"
-          className="mr-8 flex shrink-0 items-center gap-1.5 text-text-primary"
+          className="mr-8 flex h-full shrink-0 items-center gap-1.5 text-text-primary transition-opacity hover:opacity-75"
           style={{
             fontFamily: "'Barlow Condensed', sans-serif",
             fontWeight: 800,

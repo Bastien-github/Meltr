@@ -103,7 +103,7 @@ export function CategoryDropdown({ selected, onChange, maxSelected = 3 }: Props)
       {/* Dropdown */}
       {open && (
         <>
-          <div style={{ position: "fixed", inset: 0, zIndex: 98 }} onClick={() => setOpen(false)} />
+          <div style={{ position: "fixed", inset: 0, zIndex: 48 }} onClick={() => setOpen(false)} />
           <div
             style={{
               position: "absolute",

@@ -386,7 +386,7 @@ function Step3Form({
           </span>
         </div>
         <p className="text-xs text-text-muted" style={{ margin: 0 }}>
-          Flat fee covers isolated execution for all entries, LLM judging, oracle signing, S3 export, and Base L2 anchoring.
+          Flat fee covers isolated execution for all entries, LLM judging, oracle signing, S3 export, and Algorand anchoring.
         </p>
       </div>
 

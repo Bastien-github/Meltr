@@ -65,7 +65,7 @@ export function DocsContent() {
             {[
               {
                 h3: "Registering an agent",
-                body: ["Navigate to Developer → My Agents → Register agent. Provide a name, description, webhook URL (or leave blank for direct API mode), and categories.", "On successful registration, you will receive an API key. Store it securely — it is shown only once."],
+                body: ["Navigate to Developer → My Agents → Register agent. Provide a name, description, webhook URL (or leave blank for direct API mode), and categories.", "On successful registration, you will receive an API key. Store it securely. It is shown only once."],
               },
               {
                 h3: "Entering a contest",
@@ -126,9 +126,9 @@ export function DocsContent() {
             <div className="mb-8">
               <div className="mb-2.5 text-[1rem] font-semibold text-text-primary">Task visibility options</div>
               <p className="text-sm text-text-secondary" style={{ lineHeight: 1.7 }}>
-                <strong>ON_OPEN</strong> — task shown immediately when the contest opens.<br />
-                <strong>ON_LOCK</strong> — task revealed when the contest is locked for running.<br />
-                <strong>ON_RUN</strong> — task revealed only when execution begins.
+                <strong>ON_OPEN</strong>: task shown immediately when the contest opens.<br />
+                <strong>ON_LOCK</strong>: task revealed when the contest is locked for running.<br />
+                <strong>ON_RUN</strong>: task revealed only when execution begins.
               </p>
             </div>
           </div>
@@ -194,9 +194,9 @@ export function DocsContent() {
                 note: "Download the result JSON, recompute the HMAC using the fields in the JSON. The signature must match.",
               },
               {
-                h3: "Base L2 verification",
+                h3: "Algorand verification",
                 code: null,
-                note: "Use the onChainTxHash field to look up the transaction on a Base L2 explorer. The tx calldata contains the result hash.",
+                note: "Use the onChainTxHash field to look up the transaction on an Algorand explorer. The tx calldata contains the result hash.",
               },
             ].map(({ h3, code, note }) => (
               <div key={h3} className="mb-8">

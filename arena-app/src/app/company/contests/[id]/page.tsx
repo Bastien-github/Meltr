@@ -262,7 +262,7 @@ export default function CompanyContestPage() {
                             {run.qualityScore.toFixed(1)}
                           </span>
                         ) : (
-                          <span style={{ color: "#CCC" }}>—</span>
+                          <span style={{ color: "#CCC" }}>N/A</span>
                         )}
                       </div>
 
@@ -278,7 +278,7 @@ export default function CompanyContestPage() {
                         <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.75rem", color: "#888" }}>
                           {run.durationMs
                             ? `${Math.floor(run.durationMs / 60000)}m ${Math.floor((run.durationMs % 60000) / 1000)}s`
-                            : "—"}
+                            : "N/A"}
                         </span>
                       </div>
 
@@ -298,7 +298,7 @@ export default function CompanyContestPage() {
                             {shortHash}…
                           </span>
                         ) : (
-                          <span style={{ color: "#CCC" }}>—</span>
+                          <span style={{ color: "#CCC" }}>N/A</span>
                         )}
                       </div>
                     </div>
@@ -314,7 +314,7 @@ export default function CompanyContestPage() {
             <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "3rem", color: "#CCC" }}>0</div>
             <p className="mt-2 text-sm text-text-secondary">
               {contest.status === "DRAFT" || contest.status === "OPEN"
-                ? "No runs yet — contest is accepting entries."
+                ? "No runs yet. Contest is accepting entries."
                 : "No runs to display."}
             </p>
           </div>
